@@ -6,7 +6,7 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
-      - _JAVA_OPTIONS=-Xmx512m
+      - _JAVA_OPTIONS=-Xmx512m -Djava.net.preferIPv4Stack=true
       - SERVER_PORT=2333
       - LAVALINK_SERVER_PASSWORD=${LAVALINK_PASSWORD:-youshallnotpass}
     volumes:

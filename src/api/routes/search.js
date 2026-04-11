@@ -42,7 +42,8 @@ async function getSpotifyToken() {
 
 // GET /api/search?q=...&source=youtube|soundcloud|spotify
 router.get('/', async (req, res) => {
-  const { q, source = 'youtube' } = req.query;
+  const q = (req.query.q || '').trim();
+  const source = req.query.source || 'youtube';
   if (!q) return res.status(400).json({ error: 'q is required' });
 
   const manager = req.app.locals.getManager();
@@ -73,7 +74,7 @@ router.get('/', async (req, res) => {
 
     // Default to Lavalink search (ytsearch, ytmsearch, scsearch)
     let searchPrefix = 'ytsearch';
-    if (source === 'youtube') searchPrefix = 'ytsearch'; // Use standard ytsearch for more results
+    if (source === 'youtube') searchPrefix = 'ytmsearch'; // Using ytmsearch for better OAuth compatibility
     if (source === 'soundcloud') searchPrefix = 'scsearch';
 
     // If it's a URL, no prefix
