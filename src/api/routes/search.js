@@ -94,10 +94,17 @@ router.get('/', async (req, res) => {
     if (!node) return res.status(500).json({ error: 'No active Lavalink node' });
 
     console.log(`[API] Searching YouTube for: "${query}" using node: ${node.id}`);
-    const result = await node.search(query, 'dashboard');
+    let result = await node.search(query, 'dashboard');
 
-    if (!result || !result.tracks) {
-      console.warn(`[API] Search returned no results for: "${query}"`);
+    // Intelligent Fallback: if ytsearch returns 0, try ytmsearch (better for servers)
+    if (source === 'youtube' && (!result || !result.tracks || result.tracks.length === 0)) {
+      console.warn(`[API] Search "${query}" returned 0 results. Falling back to YouTube Music...`);
+      const fallbackQuery = `ytmsearch:${q}`;
+      result = await node.search(fallbackQuery, 'dashboard');
+    }
+
+    if (!result || !result.tracks || result.tracks.length === 0) {
+      console.warn(`[API] Search returned no results for: "${q}" after fallback.`);
       return res.json({ loadType: 'empty', tracks: [] });
     }
 
