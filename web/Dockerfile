@@ -1,4 +1,5 @@
-FROM node:20-alpine AS builder
+# 1. Cambia la imagen de construcción
+FROM public.ecr.aws/docker/library/node:20-alpine AS builder
 
 WORKDIR /app
 COPY package*.json ./
@@ -6,7 +7,8 @@ RUN npm install
 COPY . .
 RUN npm run build
 
-FROM nginx:alpine
+# 2. Cambia la imagen de Nginx
+FROM public.ecr.aws/nginx/nginx:alpine
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
