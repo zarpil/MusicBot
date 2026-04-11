@@ -94,17 +94,27 @@ router.get('/', async (req, res) => {
     if (!node) return res.status(500).json({ error: 'No active Lavalink node' });
 
     console.log(`[API] Searching YouTube for: "${query}" using node: ${node.id}`);
-    let result = await node.search(query, 'dashboard');
+    let result = null;
+    
+    try {
+      result = await node.search(query, 'dashboard');
+    } catch (err) {
+      console.warn(`[API] First search attempt failed for "${query}": ${err.message}`);
+    }
 
-    // Intelligent Fallback: if ytsearch returns 0, try ytmsearch (better for servers)
+    // Intelligent Fallback: if ytsearch returns 0 OR fails with an error, try ytmsearch (better for servers)
     if (source === 'youtube' && (!result || !result.tracks || result.tracks.length === 0)) {
-      console.warn(`[API] Search "${query}" returned 0 results. Falling back to YouTube Music...`);
+      console.warn(`[API] Search "${query}" resulted in error or empty results. Falling back to YouTube Music...`);
       const fallbackQuery = `ytmsearch:${q}`;
-      result = await node.search(fallbackQuery, 'dashboard');
+      try {
+        result = await node.search(fallbackQuery, 'dashboard');
+      } catch (fallbackErr) {
+        console.error(`[API] Fallback search also failed:`, fallbackErr.message);
+      }
     }
 
     if (!result || !result.tracks || result.tracks.length === 0) {
-      console.warn(`[API] Search returned no results for: "${q}" after fallback.`);
+      console.warn(`[API] All search attempts failed for: "${q}"`);
       return res.json({ loadType: 'empty', tracks: [] });
     }
 

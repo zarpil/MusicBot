@@ -114,19 +114,30 @@ function initWsServer(httpServer, getManager) {
               try {
                 const query = msg.track.uri || msg.track._searchQuery || `${msg.track.author} - ${msg.track.title}`;
                 console.log(`[WS] Resolviendo pista para encolar: ${query}`);
-                const res = await player.search(query, 'dashboard');
+                let res = null;
+                try {
+                  res = await player.search(query, 'dashboard');
+                } catch (err) {
+                  console.warn(`[WS] First resolve attempt failed for "${query}": ${err.message}`);
+                }
                 
                 let trackToLoad = (res && res.tracks && res.tracks.length > 0) ? res.tracks[0] : null;
 
-                // Fallback for YouTube: if direct resolve fails, try ytmsearch
-                if (!trackToLoad && query.includes('youtube.com') || query.includes('youtu.be')) {
-                   const videoId = query.match(/(?:v=|ext\/|embed\/|youtu.be\/)([^&?#/]+)/)?.[1];
-                   if (videoId) {
-                      console.warn(`[WS] Direct YT resolve failed. Trying ytmsearch fallback for video ID: ${videoId}`);
-                      const fallbackRes = await player.search(`ytmsearch:${videoId}`, 'dashboard');
-                      if (fallbackRes && fallbackRes.tracks && fallbackRes.tracks.length > 0) {
+                // Fallback for YouTube: if direct resolve fails OR errors out, try ytmsearch
+                if (!trackToLoad && (query.includes('youtube.com') || query.includes('youtu.be') || query.startsWith('ytsearch'))) {
+                   // Clean up query if it has prefix
+                   const q = query.replace('ytsearch:', '');
+                   const videoId = q.match(/(?:v=|ext\/|embed\/|youtu.be\/)([^&?#/]+)/)?.[1];
+                   const searchTerms = videoId || q;
+
+                   console.warn(`[WS] Direct YT resolve failed/errored. Trying ytmsearch fallback for: ${searchTerms}`);
+                   try {
+                     const fallbackRes = await player.search(`ytmsearch:${searchTerms}`, 'dashboard');
+                     if (fallbackRes && fallbackRes.tracks && fallbackRes.tracks.length > 0) {
                         trackToLoad = fallbackRes.tracks[0];
-                      }
+                     }
+                   } catch (fallbackErr) {
+                     console.error(`[WS] Fallback resolve also failed:`, fallbackErr.message);
                    }
                 }
 
