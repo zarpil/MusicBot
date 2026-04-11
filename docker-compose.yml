@@ -1,7 +1,9 @@
 services:
   # ─── Lavalink Audio Server ─────────────────────────────────────────────────
   lavalink:
-    image: ghcr.io/lavalink-devs/lavalink:4
+    build:
+      context: ./lavalink
+      dockerfile: Dockerfile
     container_name: musicbot-lavalink
     restart: unless-stopped
     env_file: .env
@@ -10,8 +12,6 @@ services:
       - SERVER_PORT=2333
       - LAVALINK_SERVER_PASSWORD=${LAVALINK_PASSWORD:-youshallnotpass}
     volumes:
-      - ./lavalink/application.yml:/opt/Lavalink/application.yml
-      - ./lavalink/plugins:/opt/Lavalink/plugins
       - ./lavalink/data:/opt/Lavalink/data
       - lavalink_data:/opt/Lavalink/logs
     ports:
