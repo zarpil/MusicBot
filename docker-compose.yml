@@ -7,7 +7,7 @@ services:
     environment:
       - _JAVA_OPTIONS=-Xmx512m
       - SERVER_PORT=2333
-      - LAVALINK_SERVER_PASSWORD=youshallnotpass
+      - LAVALINK_SERVER_PASSWORD=${LAVALINK_PASSWORD:-youshallnotpass}
     volumes:
       - ./lavalink/application.yml:/opt/Lavalink/application.yml
       - ./lavalink/plugins:/opt/Lavalink/plugins
@@ -18,7 +18,7 @@ services:
     networks:
       - musicbot-net
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "--header=Authorization: youshallnotpass", "http://localhost:2333/v4/info", "-O", "/dev/null"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "--header=Authorization: ${LAVALINK_PASSWORD:-youshallnotpass}", "http://localhost:2333/v4/info", "-O", "/dev/null"]
       interval: 15s
       timeout: 10s
       retries: 5
@@ -55,7 +55,7 @@ services:
     depends_on:
       - app
     ports:
-      - "80:80"
+      - "2728:80"
     networks:
       - musicbot-net
 

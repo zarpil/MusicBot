@@ -18,7 +18,7 @@ Este proyecto está diseñado para funcionar perfectamente en **Coolify** utiliz
 
 ## 4. Dominios y Puertos (Crítico)
 Para que el bot y la web funcionen correctamente:
-- **Web (Dashboard)**: Asigna un dominio (ej: `music.tudominio.com`). Coolify lo conectará automáticamente al puerto 80 del contenedor `web`.
+- **Web (Dashboard)**: Asigna un dominio (ej: `music.tudominio.com`). Coolify lo conectará automáticamente al puerto 2728 del contenedor `web`.
 - **API y WebSockets**: La web necesita comunicarse con el servidor en el puerto `3001`.
   - Si usas **IP Directa**: Asegúrate de que el firewall de tu servidor permita el tráfico en el puerto `3001`.
   - Si usas **Dominio**: Puedes añadir un segundo dominio (ej: `api.tudominio.com`) y decirle a Coolify que lo mapee al puerto `3001`.

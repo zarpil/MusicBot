@@ -35,7 +35,7 @@ Un bot de música para Discord potente, moderno y con un panel web interactivo d
    docker-compose up -d
    ```
 
-El panel estará disponible en `http://localhost:80` y la API en el puerto `3001`.
+El panel estará disponible en `http://localhost:2728` y la API en el puerto `3001`.
 
 ---
 
@@ -45,7 +45,7 @@ Este proyecto está optimizado para **Coolify**:
 1. Conecta tu repositorio de GitHub.
 2. Selecciona **Docker Compose** como tipo de despliegue.
 3. Copia las variables de `.env.example` a la sección **Environment Variables** de Coolify.
-4. Asegúrate de exponer los puertos `80` (Web) y `3001` (API/WebSocket).
+4. Asegúrate de exponer los puertos `2728` (Web) y `3001` (API/WebSocket).
 
 Ver más detalles en [COOLIFY_GUIDE.md](./COOLIFY_GUIDE.md).
 
