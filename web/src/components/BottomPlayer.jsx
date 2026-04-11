@@ -1,4 +1,5 @@
-import { Play, Pause, SkipForward, Volume2, Repeat, Volume } from 'lucide-react';
+import { useState } from 'react';
+import { Play, Pause, SkipForward, Volume2, Repeat } from 'lucide-react';
 import usePlayerStore from '../store/usePlayerStore';
 
 function formatTime(ms) {
@@ -10,8 +11,11 @@ function formatTime(ms) {
 }
 
 export default function BottomPlayer() {
-  const { active, playing, paused, volume, position, autoplay, current, loading } = usePlayerStore(state => state.state);
+  const { active, paused, volume, position, autoplay, current, loading } = usePlayerStore(state => state.state);
   const { play, pause, skip, setVolume, toggleAutoplay, seek } = usePlayerStore();
+
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragValue, setDragValue] = useState(0);
 
   if (loading) {
     return (
@@ -30,7 +34,22 @@ export default function BottomPlayer() {
     return <div className="h-24 bg-black border-t border-surfaceHighlight flex items-center justify-center text-textSecondary text-sm">Esperando música...</div>;
   }
 
-  const progressPercent = current.isStream ? 100 : (position / current.duration) * 100;
+  const currentPosition = isDragging ? dragValue : position;
+  const progressPercent = current.isStream ? 100 : (currentPosition / current.duration) * 100;
+
+  const handleSeekStart = () => {
+    setIsDragging(true);
+    setDragValue(position);
+  };
+
+  const handleSeekChange = (e) => {
+    setDragValue(parseInt(e.target.value));
+  };
+
+  const handleSeekEnd = () => {
+    setIsDragging(false);
+    seek(dragValue);
+  };
 
   return (
     <div className="h-24 bg-black border-t border-surfaceHighlight px-4 flex items-center justify-between shrink-0 select-none">
@@ -71,23 +90,32 @@ export default function BottomPlayer() {
         </div>
 
         {/* Progress bar */}
-        <div className="w-full flex items-center gap-2 text-xs text-textSecondary font-mono">
-          <span>{formatTime(position)}</span>
-          <div 
-            className="h-1 bg-surfaceHighlight rounded-full flex-1 cursor-pointer group relative overflow-hidden"
-            onClick={(e) => {
-              if (current.isStream) return;
-              const rect = e.currentTarget.getBoundingClientRect();
-              const percent = (e.clientX - rect.left) / rect.width;
-              seek(current.duration * percent);
-            }}
-          >
-            <div 
-              className="h-full bg-primary rounded-full group-hover:bg-green-400 transition-colors"
-              style={{ width: `${Math.min(progressPercent, 100)}%` }}
-            />
+        <div className="w-full flex items-center gap-2 text-xs text-textSecondary font-mono group">
+          <span className="w-10 text-right">{formatTime(currentPosition)}</span>
+          <div className="flex-1 relative flex items-center h-4">
+             {/* Visual Background */}
+             <div className="absolute w-full h-1 bg-surfaceHighlight rounded-full shadow-inner"></div>
+             {/* Visual Progress */}
+             <div 
+               className="absolute h-1 bg-primary rounded-full group-hover:bg-green-400 transition-colors pointer-events-none"
+               style={{ width: `${Math.min(progressPercent, 100)}%` }}
+             />
+             {/* Hidden Real Input for Interaction */}
+             <input 
+               type="range"
+               min="0"
+               max={current.duration || 100}
+               value={currentPosition}
+               onMouseDown={handleSeekStart}
+               onInput={handleSeekChange}
+               onMouseUp={handleSeekEnd}
+               onTouchStart={handleSeekStart}
+               onTouchEnd={handleSeekEnd}
+               className="absolute w-full h-4 opacity-0 cursor-pointer accent-primary"
+               disabled={current.isStream}
+             />
           </div>
-          <span>{current.isStream ? 'EN DIRECTO' : formatTime(current.duration)}</span>
+          <span className="w-10">{current.isStream ? 'LIVE' : formatTime(current.duration)}</span>
         </div>
       </div>
 
