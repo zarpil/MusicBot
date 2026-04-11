@@ -116,8 +116,21 @@ function initWsServer(httpServer, getManager) {
                 console.log(`[WS] Resolviendo pista para encolar: ${query}`);
                 const res = await player.search(query, 'dashboard');
                 
-                if (res && res.tracks && res.tracks.length > 0) {
-                  const trackToLoad = res.tracks[0];
+                let trackToLoad = (res && res.tracks && res.tracks.length > 0) ? res.tracks[0] : null;
+
+                // Fallback for YouTube: if direct resolve fails, try ytmsearch
+                if (!trackToLoad && query.includes('youtube.com') || query.includes('youtu.be')) {
+                   const videoId = query.match(/(?:v=|ext\/|embed\/|youtu.be\/)([^&?#/]+)/)?.[1];
+                   if (videoId) {
+                      console.warn(`[WS] Direct YT resolve failed. Trying ytmsearch fallback for video ID: ${videoId}`);
+                      const fallbackRes = await player.search(`ytmsearch:${videoId}`, 'dashboard');
+                      if (fallbackRes && fallbackRes.tracks && fallbackRes.tracks.length > 0) {
+                        trackToLoad = fallbackRes.tracks[0];
+                      }
+                   }
+                }
+
+                if (trackToLoad) {
                   await player.queue.add(trackToLoad);
                   send(ws, { type: 'SUCCESS', message: `Añadido: ${trackToLoad.info.title}` });
                   // Only start playing if nothing is currently in the player
@@ -129,7 +142,7 @@ function initWsServer(httpServer, getManager) {
                     state: serializePlayer(player),
                   });
                 } else {
-                  console.warn(`[WS] No se pudo resolver la pista: ${query} (loadType: ${res?.loadType}, exception: ${JSON.stringify(res?.exception || 'none')})`);
+                  console.warn(`[WS] No se pudo resolver la pista: ${query} (loadType: ${res?.loadType})`);
                   send(ws, { type: 'ERROR', message: 'No se pudo encontrar la pista de audio o está bloqueada' });
                 }
               } catch (err) {
