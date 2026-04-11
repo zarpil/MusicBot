@@ -1,0 +1,56 @@
+server:
+  port: 2333
+  address: 0.0.0.0
+
+lavalink:
+  plugins:
+    - dependency: "dev.arbjerg.lavalink.node.plugin:youtube-plugin:1.18.0"
+      snapshot: false
+  server:
+    password: "youshallnotpass"
+    sources:
+      youtube: false # Desactivado por defecto para usar el plugin
+      bandcamp: true
+      soundcloud: true
+      twitch: true
+      vimeo: true
+      mixer: true
+      http: true
+      local: false
+    filters:
+      volume: true
+      equalizer: true
+      karaoke: true
+      timescale: true
+      tremolo: true
+      vibrato: true
+      distortion: true
+      rotation: true
+      channelMix: true
+      lowPass: true
+    bufferDurationMs: 400
+    frameBufferDurationMs: 5000
+    opusEncodingQuality: 10
+    resamplingQuality: HIGH
+    trackStuckThresholdMs: 10000
+    useSeekGhosting: true
+    youtubePlaylistLoadLimit: 6
+    playerUpdateInterval: 5
+
+plugins:
+  youtube:
+    enabled: true
+    allowDirectVideoIds: true
+    allowDirectPlaylistIds: true
+    # ─── CONFIGURA ESTO PARA YOUTUBE ───
+    # Ver guía: https://github.com/lavalink-devs/youtube-source#using-oauth2
+    # oauth:
+    #   refreshToken: "tu_token_aqui"
+    #   skipValidation: true
+
+logging:
+  file:
+    path: ./logs/lavalink.log
+  level:
+    root: INFO
+    lavalink: INFO

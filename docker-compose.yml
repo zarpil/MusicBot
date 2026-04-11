@@ -1,0 +1,67 @@
+services:
+  # ─── Lavalink Audio Server ─────────────────────────────────────────────────
+  lavalink:
+    image: ghcr.io/lavalink-devs/lavalink:4-alpine
+    container_name: musicbot-lavalink
+    restart: unless-stopped
+    environment:
+      - _JAVA_OPTIONS=-Xmx512m
+      - SERVER_PORT=2333
+      - LAVALINK_SERVER_PASSWORD=youshallnotpass
+    volumes:
+      - ./lavalink/application.yml:/opt/Lavalink/application.yml
+      - ./lavalink/plugins:/opt/Lavalink/plugins
+      - ./lavalink/data:/opt/Lavalink/data
+      - lavalink_data:/opt/Lavalink/logs
+    ports:
+      - "2333:2333"
+    networks:
+      - musicbot-net
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "--header=Authorization: youshallnotpass", "http://localhost:2333/v4/info", "-O", "/dev/null"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # ─── Bot + API (single Node.js process) ───────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: musicbot-app
+    restart: unless-stopped
+    depends_on:
+      lavalink:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      - LAVALINK_HOST=lavalink
+      - LAVALINK_PORT=2333
+    volumes:
+      - ./data:/app/data
+    ports:
+      - "3001:3001"
+    networks:
+      - musicbot-net
+
+  # ─── Web Dashboard (Nginx serving built React app) ─────────────────────────
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: musicbot-web
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+    networks:
+      - musicbot-net
+
+networks:
+  musicbot-net:
+    driver: bridge
+
+volumes:
+  lavalink_data:
