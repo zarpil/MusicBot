@@ -129,8 +129,8 @@ function initWsServer(httpServer, getManager) {
                     state: serializePlayer(player),
                   });
                 } else {
-                  console.warn(`[WS] No se pudo resolver la pista: ${query}`);
-                  send(ws, { type: 'ERROR', message: 'No se pudo encontrar la pista de audio' });
+                  console.warn(`[WS] No se pudo resolver la pista: ${query} (loadType: ${res?.loadType}, exception: ${JSON.stringify(res?.exception || 'none')})`);
+                  send(ws, { type: 'ERROR', message: 'No se pudo encontrar la pista de audio o está bloqueada' });
                 }
               } catch (err) {
                 console.error('[WS] Enqueue error:', err);

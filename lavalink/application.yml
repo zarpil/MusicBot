@@ -9,11 +9,11 @@ plugins:
     allowDirectVideoIds: true
     allowDirectPlaylistIds: true
     clients:
-      - M_WEB
-      - WEB
-      - MUSIC
+      - TVHTML5
       - ANDROID_VR
-      - TV
+      - ANDROID_TESTSUITE
+      - MUSIC
+      - WEB
     oauth:
       enabled: true
       refreshToken: "${YOUTUBE_REFRESH_TOKEN:}"
