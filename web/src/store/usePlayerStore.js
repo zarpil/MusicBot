@@ -27,8 +27,9 @@ const usePlayerStore = create((set, get) => ({
     set({ activeGuildId: guildId });
 
     // Connect to WebSocket
-    const apiHost = window.location.hostname;
-    const wsUrl = `ws://${apiHost}:3001/ws?guildId=${guildId}`;
+    const isSecure = window.location.protocol === 'https:';
+    const protocol = isSecure ? 'wss' : 'ws';
+    const wsUrl = `${protocol}://${window.location.host}/ws?guildId=${guildId}`;
     const ws = new WebSocket(wsUrl);
 
     ws.onmessage = (event) => {

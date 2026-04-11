@@ -7,7 +7,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    axios.get('http://localhost:3001/api/guilds').then(res => {
+    axios.get('/api/guilds').then(res => {
       setGuilds(res.data);
     }).catch(console.error);
   }, []);

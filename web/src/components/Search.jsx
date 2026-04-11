@@ -56,8 +56,7 @@ export default function Search({ guildId }) {
         if (!query.trim()) return;
         setLoading(true);
         try {
-            const apiHost = window.location.hostname;
-            const res = await axios.get(`http://${apiHost}:3001/api/search`, {
+            const res = await axios.get('/api/search', {
                 params: { q: query, source }
             });
             setResults(res.data.tracks || []);
