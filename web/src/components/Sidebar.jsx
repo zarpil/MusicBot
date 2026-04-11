@@ -5,7 +5,7 @@ export default function Sidebar({ guildId }) {
   const navigate = useNavigate();
 
   return (
-    <nav className="w-64 bg-background flex flex-col p-6 gap-6 pt-8 shrink-0">
+    <nav className="hidden md:flex w-64 bg-background flex-col p-6 gap-6 pt-8 shrink-0">
       <button 
         onClick={() => navigate('/')} 
         className="flex items-center gap-2 text-textSecondary hover:text-white transition group w-fit"

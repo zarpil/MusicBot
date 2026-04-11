@@ -52,22 +52,22 @@ export default function BottomPlayer() {
   };
 
   return (
-    <div className="h-24 bg-black border-t border-surfaceHighlight px-4 flex items-center justify-between shrink-0 select-none">
+    <div className="h-auto md:h-24 bg-black border-t border-surfaceHighlight px-4 py-3 md:py-0 flex flex-col md:flex-row items-center justify-between shrink-0 select-none gap-3 md:gap-0">
       {/* Left: Track Info */}
-      <div className="flex items-center gap-4 w-[30%] min-w-[180px]">
+      <div className="flex items-center gap-4 w-full md:w-[30%] md:min-w-[180px]">
         {current.artworkUrl ? (
-          <img src={current.artworkUrl} className="w-14 h-14 rounded shadow-md object-cover" alt="Art" />
+          <img src={current.artworkUrl} className="w-12 h-12 md:w-14 md:h-14 rounded shadow-md object-cover" alt="Art" />
         ) : (
-          <div className="w-14 h-14 bg-surface rounded flex items-center justify-center shadow-md">🎵</div>
+          <div className="w-12 h-12 md:w-14 md:h-14 bg-surface rounded flex items-center justify-center shadow-md">🎵</div>
         )}
-        <div className="overflow-hidden">
+        <div className="overflow-hidden flex-1">
           <div className="truncate font-semibold hover:underline cursor-pointer" title={current.title}>{current.title}</div>
           <div className="text-xs text-textSecondary truncate">{current.author}</div>
         </div>
       </div>
 
       {/* Middle: Controls */}
-      <div className="flex flex-col items-center justify-center max-w-[40%] flex-1 gap-2">
+      <div className="flex flex-col items-center justify-center w-full md:max-w-[40%] flex-1 gap-2">
         <div className="flex items-center gap-6">
           <button 
             onClick={toggleAutoplay} 
@@ -78,7 +78,7 @@ export default function BottomPlayer() {
           </button>
           
           <button 
-            className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 transition shadow-md"
+            className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 transition shadow-md"
             onClick={paused ? play : pause}
           >
             {paused ? <Play size={18} className="ml-1" /> : <Pause size={18} />}
@@ -120,7 +120,7 @@ export default function BottomPlayer() {
       </div>
 
       {/* Right: Volume */}
-      <div className="w-[30%] min-w-[180px] flex justify-end items-center gap-2 text-textSecondary pr-4">
+      <div className="hidden md:flex w-[30%] min-w-[180px] justify-end items-center gap-2 text-textSecondary pr-4">
         <Volume2 size={20} />
         <input 
           type="range" 

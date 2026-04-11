@@ -50,12 +50,12 @@ export default function Queue() {
                       >
                         <div 
                           {...provided.dragHandleProps}
-                          className="text-textSecondary opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
+                          className="text-textSecondary opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
                         >
                           <GripVertical size={18} />
                         </div>
 
-                        <div className="w-4 text-right text-textSecondary text-xs font-mono group-hover:hidden">
+                        <div className="w-4 text-right text-textSecondary text-xs font-mono hidden md:block group-hover:hidden">
                           {i + 1}
                         </div>
 
@@ -80,7 +80,7 @@ export default function Queue() {
                             {track.isStream ? 'EN DIRECTO' : formatTime(track.duration)}
                           </div>
                           <button
-                            className="p-1.5 opacity-0 group-hover:opacity-100 text-textSecondary hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
+                            className="p-1.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 text-textSecondary hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
                             onClick={() => removeTrack(i)}
                             title="Eliminar"
                           >
