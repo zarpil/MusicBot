@@ -1,7 +1,7 @@
 services:
   # ─── Lavalink Audio Server ─────────────────────────────────────────────────
   lavalink:
-    image: ghcr.io/lavalink-devs/lavalink:4-alpine
+    image: ghcr.io/lavalink-devs/lavalink:4
     container_name: musicbot-lavalink
     restart: unless-stopped
     env_file: .env
