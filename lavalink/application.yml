@@ -9,9 +9,9 @@ plugins:
     allowDirectVideoIds: true
     allowDirectPlaylistIds: true
     clients:
-      - TVHTML5
-      - ANDROID_VR
       - ANDROID_TESTSUITE
+      - ANDROID_VR
+      - TVHTML5
       - MUSIC
       - WEB
     oauth:
@@ -22,7 +22,7 @@ plugins:
 
 lavalink:
   plugins:
-    - dependency: "dev.lavalink.youtube:youtube-plugin:1.18.0"
+    - dependency: "dev.lavalink.youtube:youtube-plugin:1.18.2"
       repository: "https://maven.lavalink.dev/releases"
   pluginsDir: "./plugins"
   server:

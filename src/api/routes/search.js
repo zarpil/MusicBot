@@ -81,12 +81,23 @@ router.get('/', async (req, res) => {
     const query = q.startsWith('http') ? q : `${searchPrefix}:${q}`;
     
     // We need a dummy requester, standard Lavalink-client usage
+    if (!manager || !manager.nodeManager) {
+      return res.status(500).json({ error: 'Lavalink Manager not initialized' });
+    }
+
     const nodes = manager.nodeManager.nodes;
-    if (nodes.size === 0) return res.status(500).json({ error: 'No Lavalink nodes connected' });
+    if (!nodes || nodes.size === 0) {
+      return res.status(500).json({ error: 'No Lavalink nodes connected' });
+    }
+    
     const node = [...nodes.values()][0];
+    if (!node) return res.status(500).json({ error: 'No active Lavalink node' });
+
+    console.log(`[API] Searching YouTube for: "${query}" using node: ${node.id}`);
     const result = await node.search(query, 'dashboard');
 
     if (!result || !result.tracks) {
+      console.warn(`[API] Search returned no results for: "${query}"`);
       return res.json({ loadType: 'empty', tracks: [] });
     }
 
@@ -100,9 +111,11 @@ router.get('/', async (req, res) => {
       sourceName: track.info.sourceName,
     }));
 
+    console.log(`[API] Search successful, found ${tracks.length} tracks`);
     res.json({ loadType: result.loadType, tracks: tracks.slice(0, 20) });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error(`[API] Search CRASH for "${req.query.q}":`, err);
+    res.status(500).json({ error: 'Error interno al buscar la canción. Inténtalo de nuevo.' });
   }
 });
 
