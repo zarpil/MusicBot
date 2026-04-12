@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Play, Pause, SkipForward, Volume2, Repeat } from 'lucide-react';
+import { Play, Pause, SkipForward, Volume2, Radio } from 'lucide-react';
 import usePlayerStore from '../store/usePlayerStore';
 
 function formatTime(ms) {
@@ -115,9 +115,9 @@ export default function BottomPlayer() {
           <button 
             onClick={toggleAutoplay} 
             className={`transition ${autoplay ? 'text-primary' : 'text-textSecondary hover:text-white'}`}
-            title="Autoplay"
+            title="Modo Radio (Autoplay)"
           >
-            <Repeat size={18} />
+            <Radio size={18} />
           </button>
           
           <button 

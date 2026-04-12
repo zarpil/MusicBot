@@ -1,6 +1,7 @@
 'use strict';
 
 const { LavalinkManager } = require('lavalink-client');
+const db = require('../db/database');
 
 /** @type {LavalinkManager|null} */
 let _manager = null;
@@ -40,6 +41,13 @@ function createManager(discordClient) {
     },
   });
 
+  _manager.on('playerCreate', (player) => {
+    const guild = db.getGuild(player.guildId);
+    if (guild) {
+      player.set('autoplay', !!guild.autoplay);
+    }
+  });
+
   // ── Node lifecycle logs ────────────────────────────────────────────────────
   _manager.nodeManager.on('connect', node => {
     console.log(`[Lavalink] Node "${node.id}" connected`);
@@ -57,8 +65,37 @@ function createManager(discordClient) {
     console.log(`[Lavalink] trackStart: ${track?.info?.title} in ${player.guildId}`);
   });
   
-  _manager.on('trackEnd', (player, track, payload) => {
+  _manager.on('trackEnd', async (player, track, payload) => {
     console.log(`[Lavalink] trackEnd: ${track?.info?.title} in ${player.guildId} reason: ${payload?.reason}`);
+    
+    // Autoplay / Radio logic
+    const isAutoplay = player.get('autoplay');
+    if (isAutoplay && player.queue.tracks.length === 0 && payload?.reason !== 'replaced') {
+      try {
+        console.log(`[Lavalink] Autoplay: buscando canción relacionada para "${track.info.title}"...`);
+        
+        // Use the previous track's title and author to find something related
+        const query = `ytmsearch:${track.info.title} ${track.info.author} related`;
+        const res = await player.search(query, track.requester || 'Autoplay');
+        
+        if (res.tracks.length > 0) {
+          // Add the first result (typically the most related)
+          const nextTrack = res.tracks[0];
+          await player.queue.add(nextTrack);
+          console.log(`[Lavalink] Autoplay: añadiendo "${nextTrack.info.title}"`);
+          
+          if (!player.playing) await player.play();
+          
+          // Broadcast update to web clients if possible
+          try {
+            const { broadcast, serializePlayer } = require('../api/ws/wsServer');
+            broadcast(player.guildId, { type: 'STATE_SYNC', state: serializePlayer(player) });
+          } catch (e) { /* wsServer might not be available yet */ }
+        }
+      } catch (err) {
+        console.error('[Lavalink] Autoplay error:', err);
+      }
+    }
   });
   
   _manager.on('trackStuck', (player, track, payload) => {

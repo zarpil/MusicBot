@@ -1,6 +1,7 @@
 'use strict';
 
 const WebSocket = require('ws');
+const db = require('../../db/database');
 
 /** guild ID → Set<WebSocket> */
 const rooms = new Map();
@@ -110,7 +111,9 @@ function initWsServer(httpServer, getManager) {
 
           case 'TOGGLE_AUTOPLAY':
             if (player) {
-              player.set('autoplay', !player.get('autoplay'));
+              const newState = !player.get('autoplay');
+              player.set('autoplay', newState);
+              db.setAutoplay(guildId, newState); // Persist in DB
               broadcast(guildId, {
                 type:     'STATE_SYNC',
                 state:    serializePlayer(player),

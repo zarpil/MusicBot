@@ -106,6 +106,10 @@ function getGuild(id) {
   return getDb().prepare('SELECT * FROM guilds WHERE id = ?').get(id);
 }
 
+function setAutoplay(id, enabled) {
+  return getDb().prepare('UPDATE guilds SET autoplay = ? WHERE id = ?').run(enabled ? 1 : 0, id);
+}
+
 // ── Playlist helpers ──────────────────────────────────────────────────────────
 function getPlaylists(guildId) {
   return getDb().prepare(`
@@ -202,6 +206,7 @@ module.exports = {
   getDb,
   upsertGuild,
   getGuild,
+  setAutoplay,
   getPlaylists,
   getPlaylist,
   createPlaylist,
