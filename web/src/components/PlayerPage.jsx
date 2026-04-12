@@ -8,6 +8,8 @@ import BottomPlayer from './BottomPlayer';
 import Search from './Search';
 import Queue from './Queue';
 import History from './History';
+import PlaylistsView from './PlaylistsView';
+import PlaylistDetails from './PlaylistDetails';
 
 export default function PlayerPage() {
   const { guildId } = useParams();
@@ -16,7 +18,8 @@ export default function PlayerPage() {
   const disconnect = usePlayerStore(state => state.disconnect);
   const { active } = usePlayerStore(state => state.state);
 
-  const [view, setView] = useState('player'); // 'player' or 'history'
+  const [view, setView] = useState('player'); // 'player', 'history', 'playlists', 'playlist-details'
+  const [selectedPlaylistId, setSelectedPlaylistId] = useState(null);
 
 
   useEffect(() => {
@@ -49,8 +52,21 @@ export default function PlayerPage() {
                     <Search guildId={guildId} />
                     <Queue />
                   </div>
-                ) : (
+                ) : view === 'history' ? (
                   <History guildId={guildId} />
+                ) : view === 'playlists' ? (
+                  <PlaylistsView 
+                    guildId={guildId} 
+                    onSelect={(id) => {
+                      setSelectedPlaylistId(id);
+                      setView('playlist-details');
+                    }} 
+                  />
+                ) : (
+                  <PlaylistDetails 
+                    playlistId={selectedPlaylistId} 
+                    onBack={() => setView('playlists')} 
+                  />
                 )}
               </>
             ) : (

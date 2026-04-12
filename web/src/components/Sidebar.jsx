@@ -36,13 +36,21 @@ export default function Sidebar({ guildId, activeView, setView }) {
             <History size={24} /> Historial
           </div>
         </li>
+        <li>
+          <div 
+            onClick={() => setView('playlists')}
+            className={`flex items-center gap-4 font-bold transition cursor-pointer ${activeView === 'playlists' ? 'text-primary' : 'text-textSecondary hover:text-white'}`}
+          >
+            <Library size={24} /> Listas del Servidor
+          </div>
+        </li>
       </ul>
  
       <div className="mt-4 pt-4 border-t border-surfaceHighlight">
-         <div className="flex items-center gap-4 text-textSecondary font-bold mb-4">
-            <Library size={24} /> Tus Listas
+         <div className="text-[10px] text-textSecondary uppercase tracking-widest font-bold px-1 mb-4 opacity-50">
+            Comunidad
          </div>
-         <p className="text-xs text-textSecondary px-1">Próximamente...</p>
+         <p className="text-xs text-textSecondary/60 px-1 italic">Comparte y descubre música con tu servidor.</p>
       </div>
     </nav>
   );

@@ -33,11 +33,14 @@ function init() {
     );
 
     CREATE TABLE IF NOT EXISTS playlists (
-      id          INTEGER PRIMARY KEY AUTOINCREMENT,
-      guild_id    TEXT NOT NULL,
-      name        TEXT NOT NULL,
-      description TEXT DEFAULT '',
-      created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      guild_id        TEXT NOT NULL,
+      name            TEXT NOT NULL,
+      description     TEXT DEFAULT '',
+      creator_id      TEXT,
+      creator_name    TEXT,
+      creator_avatar  TEXT,
+      created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (guild_id) REFERENCES guilds(id)
     );
 
@@ -105,10 +108,11 @@ function getPlaylist(id) {
   return getDb().prepare('SELECT * FROM playlists WHERE id = ?').get(id);
 }
 
-function createPlaylist(guildId, name, description = '') {
+function createPlaylist(guildId, name, description = '', creator = {}) {
   const info = getDb().prepare(`
-    INSERT INTO playlists (guild_id, name, description) VALUES (?, ?, ?)
-  `).run(guildId, name, description);
+    INSERT INTO playlists (guild_id, name, description, creator_id, creator_name, creator_avatar) 
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).run(guildId, name, description, creator.id, creator.name, creator.avatar);
   return getPlaylist(info.lastInsertRowid);
 }
 

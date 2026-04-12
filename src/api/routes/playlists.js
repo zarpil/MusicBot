@@ -1,42 +1,72 @@
 'use strict';
 
 const { Router } = require('express');
-const db         = require('../../db/database');
-
 const router = Router();
+const db     = require('../../db/database');
 
-// ── Playlists ─────────────────────────────────────────────────────────────────
-
-// GET /api/playlists?guildId=xxx
-router.get('/', (req, res) => {
-  const guildId = req.query.guildId;
-  if (!guildId) return res.status(400).json({ error: 'guildId is required' });
-
+// ── GET /api/playlists/:guildId
+router.get('/:guildId', (req, res) => {
   try {
-    const playlists = db.getPlaylists(guildId);
+    const playlists = db.getPlaylists(req.params.guildId);
     res.json(playlists);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// POST /api/playlists
-router.post('/', (req, res) => {
-  const { guildId, name, description } = req.body;
-  if (!guildId || !name) return res.status(400).json({ error: 'guildId and name are required' });
-
+// ── GET /api/playlists/details/:id
+router.get('/details/:id', (req, res) => {
   try {
-    db.upsertGuild(guildId); // Ensure guild exists
-    const playlist = db.createPlaylist(guildId, name, description);
-    res.json(playlist);
+    const playlist = db.getPlaylist(req.params.id);
+    if (!playlist) return res.status(404).json({ error: 'Playlist not found' });
+    
+    const tracks = db.getPlaylistTracks(req.params.id);
+    res.json({ ...playlist, tracks });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// DELETE /api/playlists/:id
+// ── POST /api/playlists
+router.post('/', (req, res) => {
+  try {
+    const { guildId, name, description, tracks } = req.body;
+    const user = req.user; // From requireAuth middleware
+
+    if (!guildId || !name) return res.status(400).json({ error: 'guildId and name are required' });
+
+    const creator = {
+      id: user.id,
+      name: user.username,
+      avatar: user.avatar
+    };
+
+    const playlist = db.createPlaylist(guildId, name, description || '', creator);
+
+    // If tracks provided, add them
+    if (tracks && Array.isArray(tracks)) {
+      for (const t of tracks) {
+        db.addTrackToPlaylist(playlist.id, t);
+      }
+    }
+
+    res.status(201).json(playlist);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── DELETE /api/playlists/:id
 router.delete('/:id', (req, res) => {
   try {
+    const playlist = db.getPlaylist(req.params.id);
+    if (!playlist) return res.status(404).json({ error: 'Playlist not found' });
+
+    // Validate creator (User from JWT vs Playlist creator_id)
+    if (playlist.creator_id !== req.user.id) {
+      return res.status(403).json({ error: 'Solo el creador puede borrar esta lista' });
+    }
+
     db.deletePlaylist(req.params.id);
     res.json({ success: true });
   } catch (err) {
@@ -44,39 +74,39 @@ router.delete('/:id', (req, res) => {
   }
 });
 
-// ── Playlist Tracks ───────────────────────────────────────────────────────────
-
-// GET /api/playlists/:id/tracks
-router.get('/:id/tracks', (req, res) => {
-  try {
-    const tracks = db.getPlaylistTracks(req.params.id);
-    res.json(tracks);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// POST /api/playlists/:id/tracks
+// ── POST /api/playlists/:id/tracks
 router.post('/:id/tracks', (req, res) => {
-  const { track } = req.body;
-  if (!track || !track.uri) return res.status(400).json({ error: 'track object with uri is required' });
-
-  try {
-    db.addTrackToPlaylist(req.params.id, track);
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+    try {
+      const playlist = db.getPlaylist(req.params.id);
+      if (!playlist) return res.status(404).json({ error: 'Playlist not found' });
+  
+      if (playlist.creator_id !== req.user.id) {
+        return res.status(403).json({ error: 'Solo el creador puede editar esta lista' });
+      }
+  
+      const { track } = req.body;
+      db.addTrackToPlaylist(req.params.id, track);
+      res.json({ success: true });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
 });
 
-// DELETE /api/playlists/tracks/:trackId
-router.delete('/tracks/:trackId', (req, res) => {
-  try {
-    db.removeTrackFromPlaylist(req.params.trackId);
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+// ── DELETE /api/playlists/:id/tracks/:trackId
+router.delete('/:id/tracks/:trackId', (req, res) => {
+    try {
+      const playlist = db.getPlaylist(req.params.id);
+      if (!playlist) return res.status(404).json({ error: 'Playlist not found' });
+  
+      if (playlist.creator_id !== req.user.id) {
+        return res.status(403).json({ error: 'Solo el creador puede editar esta lista' });
+      }
+  
+      db.removeTrackFromPlaylist(req.params.trackId);
+      res.json({ success: true });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
 });
 
 module.exports = router;

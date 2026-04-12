@@ -1,5 +1,7 @@
 import usePlayerStore from '../store/usePlayerStore';
-import { X, GripVertical, Play } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import axios from 'axios';
+import { X, GripVertical, Play, Library } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 function formatTime(ms) {
@@ -11,8 +13,26 @@ function formatTime(ms) {
 }
 
 export default function Queue() {
+  const { guildId } = useParams();
   const { queue } = usePlayerStore(state => state.state);
   const { removeTrack, moveTrack, jumpToTrack, clearQueue } = usePlayerStore();
+
+  const handleSavePlaylist = async () => {
+    if (queue.length === 0) return;
+    const name = window.prompt('Nombre de la nueva lista:');
+    if (!name) return;
+
+    try {
+      await axios.post('/api/playlists', {
+        guildId,
+        name,
+        tracks: queue
+      });
+      alert('Lista guardada en el servidor!');
+    } catch (err) {
+      alert(err.response?.data?.error || 'Error al guardar la lista');
+    }
+  };
 
   const onDragEnd = (result) => {
     if (!result.destination) return;
@@ -25,18 +45,28 @@ export default function Queue() {
     <div className="flex flex-col h-full bg-surfaceHighlight/30 rounded-xl p-4 overflow-hidden border border-white/5">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-bold text-xl text-white">Cola</h3>
-        {queue.length > 0 && (
-          <button 
-            onClick={() => {
-              if (window.confirm('¿Estás seguro de que quieres vaciar toda la cola?')) {
-                clearQueue();
-              }
-            }}
-            className="text-[10px] uppercase tracking-wider font-bold text-textSecondary hover:text-red-400 transition-colors px-2 py-1 rounded-md hover:bg-red-400/10"
-          >
-            Vaciar cola
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {queue.length > 0 && (
+            <>
+              <button 
+                onClick={handleSavePlaylist}
+                className="flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold text-primary hover:text-green-400 transition-colors px-2 py-1 rounded-md hover:bg-primary/10"
+              >
+                <Library size={12} /> Guardar
+              </button>
+              <button 
+                onClick={() => {
+                  if (window.confirm('¿Estás seguro de que quieres vaciar toda la cola?')) {
+                    clearQueue();
+                  }
+                }}
+                className="text-[10px] uppercase tracking-wider font-bold text-textSecondary hover:text-red-400 transition-colors px-2 py-1 rounded-md hover:bg-red-400/10"
+              >
+                Vaciar cola
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {queue.length === 0 ? (
