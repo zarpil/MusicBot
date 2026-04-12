@@ -40,6 +40,7 @@ plugins:
     clients:
       - ANDROID_VR
       - ANDROID_TESTSUITE
+      - TVHTML5EMBEDDED
       - TVHTML5
       - MUSIC
     oauth:

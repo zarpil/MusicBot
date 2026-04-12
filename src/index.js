@@ -41,6 +41,9 @@ async function main() {
   // ── 1. Database ──────────────────────────────────────────────────────────
   db.init();
 
+  // ── 1.5 Diagnostic ──
+  console.log(`[Diagnostic] YOUTUBE_REFRESH_TOKEN detectado: ${process.env.YOUTUBE_REFRESH_TOKEN ? 'SI' : 'NO'}`);
+
   // ── 2. Discord bot ────────────────────────────────────────────────────────
   const client = await initBot();
 
