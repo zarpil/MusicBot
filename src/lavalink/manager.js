@@ -147,34 +147,28 @@ function createManager(discordClient) {
 
   _manager.on('trackEnd', async (player, track, payload) => {
     const reason = payload?.reason || 'unknown';
-    console.log(`[Lavalink] trackEnd Event: title="${track?.info?.title}", reason="${reason}"`);
+    console.log(`[Lavalink] trackEnd DEBUG: title="${track?.info?.title}", reason="${reason}"`);
     
-    // If the song was replaced by the player itself (skipping), we don't necessarily want to trigger autoplay
-    // because trackEnd will fire again for the new track.
     if (reason === 'replaced' && payload?.byPlayer) return;
     
-    // Prevent double execution if trackEnd and queueEnd fire close together
-    if (player.get('isProcessingAutoplay')) return;
-    player.set('isProcessingAutoplay', true);
+    // 2-second cooldown to prevent double-triggers from multiple events (trackEnd + queueEnd)
+    const now = Date.now();
+    const lastTrigger = player.get('lastAutoplayTrigger') || 0;
+    if (now - lastTrigger < 2000) return; 
+    player.set('lastAutoplayTrigger', now);
     
-    try {
-      await handleAutoplay(player, track);
-    } finally {
-      player.set('isProcessingAutoplay', false);
-    }
+    await handleAutoplay(player, track);
   });
 
   _manager.on('queueEnd', async (player, track, payload) => {
-    console.log(`[Lavalink] queueEnd Event in ${player.guildId}`);
+    console.log(`[Lavalink] queueEnd DEBUG in ${player.guildId}`);
     
-    if (player.get('isProcessingAutoplay')) return;
-    player.set('isProcessingAutoplay', true);
+    const now = Date.now();
+    const lastTrigger = player.get('lastAutoplayTrigger') || 0;
+    if (now - lastTrigger < 2000) return; 
+    player.set('lastAutoplayTrigger', now);
 
-    try {
-      await handleAutoplay(player, track);
-    } finally {
-      player.set('isProcessingAutoplay', false);
-    }
+    await handleAutoplay(player, track);
   });
   
   _manager.on('trackStuck', (player, track, payload) => {
