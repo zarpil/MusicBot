@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-
+import useAuthStore from './useAuthStore';
 const usePlayerStore = create((set, get) => ({
   ws: null,
   activeGuildId: null,
@@ -29,7 +29,8 @@ const usePlayerStore = create((set, get) => ({
     // Connect to WebSocket
     const isSecure = window.location.protocol === 'https:';
     const protocol = isSecure ? 'wss' : 'ws';
-    const wsUrl = `${protocol}://${window.location.host}/ws?guildId=${guildId}`;
+    const { token } = useAuthStore.getState();
+    const wsUrl = `${protocol}://${window.location.host}/ws?guildId=${guildId}&token=${token}`;
     const ws = new WebSocket(wsUrl);
 
     ws.onmessage = (event) => {

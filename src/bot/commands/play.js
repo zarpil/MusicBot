@@ -3,6 +3,7 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { getManager } = require('../../lavalink/manager');
 const db = require('../../db/database');
+const authStore = require('../utils/authStore');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -11,10 +12,17 @@ module.exports = {
     .addStringOption(option =>
       option.setName('buscar')
         .setDescription('Nombre de la canción o enlace (URL)')
-        .setRequired(true)
+        .setRequired(false)
     ),
   async execute(interaction) {
-    await interaction.deferReply();
+    let query = interaction.options.getString('buscar') || interaction.options.getString('query');
+
+    // Make the response private if asking for PIN, public if queuing music
+    if (!query) {
+      await interaction.deferReply({ ephemeral: true });
+    } else {
+      await interaction.deferReply();
+    }
 
     const member = interaction.member;
     if (!member.voice.channelId) {
@@ -22,13 +30,8 @@ module.exports = {
     }
 
     const manager = getManager();
-    let query = interaction.options.getString('buscar') || interaction.options.getString('query');
- 
-    if (!query) {
-      return interaction.editReply('❌ ¡Debes especificar una canción o un enlace!');
-    }
- 
-    if (!query.startsWith('http')) query = `ytsearch:${query}`;
+    let queryClean = query;
+    if (queryClean && !queryClean.startsWith('http')) queryClean = `ytsearch:${queryClean}`;
 
     // Create or get player
     const player = manager.createPlayer({
@@ -47,18 +50,32 @@ module.exports = {
       player.set('autoplay', guildDb.autoplay === 1);
     }
 
+    // If no query, this is a dashboard login request
+    if (!queryClean) {
+      const pin = authStore.createPinForUser(interaction.user);
+      // Construct public URL, fallback to default or request host if we could inject it (we can't easily here)
+      const domain = process.env.PUBLIC_URL || 'https://tussi.zarpil.dev'; 
+      return interaction.editReply(
+        `🔐 **Acceso al Panel Web**\n\n` +
+        `El bot se ha unido a tu canal. Para controlar la música desde tu navegador, entra a:\n` +
+        `**${domain}**\n\n` +
+        `Tu código PIN secreto de 6 dígitos es: \`${pin}\`\n` +
+        `*(Este código expira en 5 minutos)*`
+      );
+    }
+
     try {
-      console.log(`[Bot] Buscando: ${query}`);
+      console.log(`[Bot] Buscando: ${queryClean}`);
       
       const nodes = manager.nodeManager.nodes;
       if (nodes.size === 0) return interaction.editReply('❌ No hay nodos de Lavalink conectados.');
       const node = [...nodes.values()][0];
       
-      const res = await node.search(query, interaction.user);
+      const res = await node.search(queryClean, interaction.user);
       console.log(`[Bot] Resultado: ${res.loadType} (${res.tracks?.length || 0} pistas)`);
 
       if (res.loadType === 'empty') {
-        return interaction.editReply(`No se han encontrado resultados para \`${query}\`.`);
+        return interaction.editReply(`No se han encontrado resultados para \`${queryClean}\`.`);
       }
 
       if (res.loadType === 'error') {

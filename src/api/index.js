@@ -11,6 +11,8 @@ const { getManager }   = require('../lavalink/manager');
 const guildsRouter    = require('./routes/guilds');
 const playlistsRouter = require('./routes/playlists');
 const searchRouter    = require('./routes/search');
+const authRouter      = require('./routes/auth');
+const { requireAuth } = require('./middleware/auth');
 
 /**
  * Initialise the Express + WebSocket API server.
@@ -32,9 +34,10 @@ async function initApi(discordClient) {
   app.locals.getManager = getManager;
 
   // ── API Routes ─────────────────────────────────────────────────────────────
-  app.use('/api/guilds',    guildsRouter);
-  app.use('/api/playlists', playlistsRouter);
-  app.use('/api/search',    searchRouter);
+  app.use('/api/auth',      authRouter);
+  app.use('/api/guilds',    requireAuth, guildsRouter);
+  app.use('/api/playlists', requireAuth, playlistsRouter);
+  app.use('/api/search',    requireAuth, searchRouter);
 
   // Health check
   app.get('/api/health', (_req, res) => res.json({ status: 'ok', uptime: process.uptime() }));

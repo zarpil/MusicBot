@@ -16,12 +16,21 @@ let _wss = null;
 function initWsServer(httpServer, getManager) {
   _wss = new WebSocket.Server({ server: httpServer, path: '/ws' });
 
+  const authStore = require('../../bot/utils/authStore');
+
   _wss.on('connection', (ws, req) => {
     const url     = new URL(req.url, `http://${req.headers.host}`);
     const guildId = url.searchParams.get('guildId');
+    const token   = url.searchParams.get('token');
 
     if (!guildId) {
       ws.close(1008, 'guildId required');
+      return;
+    }
+
+    const user = authStore.getUserFromToken(token);
+    if (!user) {
+      ws.close(1008, 'Unauthorized');
       return;
     }
 
