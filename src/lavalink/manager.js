@@ -66,53 +66,70 @@ function createManager(discordClient) {
   });
   
   _manager.on('trackEnd', async (player, track, payload) => {
-    console.log(`[Lavalink] trackEnd: ${track?.info?.title} in ${player.guildId} reason: ${payload?.reason}`);
+    const reason = payload?.reason || 'unknown';
+    console.log(`[Lavalink] trackEnd DEBUG: title="${track?.info?.title}", reason="${reason}", guild="${player.guildId}"`);
     
     // Autoplay / Radio logic
     const isAutoplay = player.get('autoplay');
-    console.log(`[Lavalink] Autoplay state for ${player.guildId}: ${isAutoplay}, queue length: ${player.queue.tracks.length}`);
+    const queueLen = player.queue.tracks.length;
+    
+    console.log(`[Lavalink] trackEnd CHECK: isAutoplay=${isAutoplay}, queueLen=${queueLen}`);
 
-    if (isAutoplay && player.queue.tracks.length === 0 && (payload?.reason === 'finished' || payload?.reason === 'stopped')) {
+    if (isAutoplay && queueLen === 0) {
+      // We ignore 'replaced' if it's because of a new song, but if it's the LAST song and it ended, we want autoplay
+      if (reason === 'replaced' && payload?.byPlayer) {
+          console.log('[Lavalink] Autoplay: Ignorando porque fue reemplazado por otro track intencionalmente');
+          return;
+      }
+
       try {
-        console.log(`[Lavalink] Autoplay: buscando canción relacionada para "${track.info.title}"...`);
+        console.log(`[Lavalink] Autoplay: buscando sugerencia para "${track.info.title}" por "${track.info.author}"`);
         
-        // Try YouTube Music search first, then regular YouTube search
-        let query = `ytmsearch:${track.info.title} ${track.info.author} related`;
-        let res = await player.search(query, track.requester || 'Autoplay');
-        
-        if (!res || !res.tracks || res.tracks.length === 0) {
-          console.log(`[Lavalink] Autoplay: no ytmsearch results, trying regular ytsearch...`);
-          query = `ytsearch:${track.info.title} ${track.info.author} related music`;
-          res = await player.search(query, track.requester || 'Autoplay');
+        // Use a simpler query first to ensure we get results
+        const queries = [
+            `ytsearch:${track.info.title} ${track.info.author} official audio`,
+            `ytmsearch:${track.info.title} ${track.info.author} radio`,
+            `ytsearch:${track.info.author} mix`
+        ];
+
+        let nextTrack = null;
+
+        for (const q of queries) {
+            console.log(`[Lavalink] Autoplay: intentando búsqueda con: "${q}"`);
+            const res = await player.search(q, 'Autoplay');
+            if (res && res.tracks && res.tracks.length > 0) {
+                // Try to find a track that isn't exactly the same one
+                nextTrack = res.tracks.find(t => t.info.uri !== track.info.uri) || res.tracks[0];
+                if (nextTrack) break;
+            }
         }
 
-        if (res && res.tracks && res.tracks.length > 0) {
-          // Find a track that isn't the one that just finished
-          const nextTrack = res.tracks.find(t => t.info.uri !== track.info.uri) || res.tracks[0];
-          
-          console.log(`[Lavalink] Autoplay: añadiendo "${nextTrack.info.title}" a la cola`);
+        if (nextTrack) {
+          console.log(`[Lavalink] Autoplay: Añadiendo "${nextTrack.info.title}"`);
           await player.queue.add(nextTrack);
           
-          if (!player.playing && !player.paused) {
-            console.log(`[Lavalink] Autoplay: iniciando reproducción de pista automática`);
-            await player.play();
+          if (!player.playing) {
+             console.log(`[Lavalink] Autoplay: Iniciando reproducción...`);
+             await player.play();
           }
           
-          // Broadcast update to web clients
+          // Broadcast to UI
           try {
             const ws = require('../api/ws/wsServer');
             if (ws && ws.broadcast) {
               ws.broadcast(player.guildId, { type: 'STATE_SYNC', state: ws.serializePlayer(player) });
             }
-          } catch (e) {
-            console.warn('[Lavalink] Autoplay skip broadcast: wsServer not ready');
+          } catch (err) {
+            console.warn('[Lavalink] Autoplay WS Sync failed (circular dep or not ready)');
           }
         } else {
-          console.warn(`[Lavalink] Autoplay: No se encontraron canciones relacionadas para "${track.info.title}"`);
+          console.warn('[Lavalink] Autoplay: No se han podido encontrar sugerencias tras varios intentos.');
         }
       } catch (err) {
-        console.error('[Lavalink] Autoplay error:', err);
+        console.error('[Lavalink] Autoplay CRITICAL ERROR:', err);
       }
+    } else {
+       console.log(`[Lavalink] Autoplay NO disparado: cond=(${isAutoplay && queueLen === 0})`);
     }
   });
   
