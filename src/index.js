@@ -1,24 +1,24 @@
 'use strict';
 require('dotenv').config();
 
-const { initBot }        = require('./bot/index');
-const { initApi }        = require('./api/index');
-const { getManager }     = require('./lavalink/manager');
-const { getWsServer }    = require('./api/ws/wsServer');
-const db                 = require('./db/database');
+const { initBot } = require('./bot/index');
+const { initApi } = require('./api/index');
+const { getManager } = require('./lavalink/manager');
+const { getWsServer } = require('./api/ws/wsServer');
+const db = require('./db/database');
 
 // ── Serialise a Lavalink track into a plain object for JSON ──────────────────
 function serializeTrack(track) {
   if (!track) return null;
   return {
-    encoded:    track.encoded,
-    title:      track.info.title,
-    author:     track.info.author,
-    duration:   track.info.duration,
-    uri:        track.info.uri,
+    encoded: track.encoded,
+    title: track.info.title,
+    author: track.info.author,
+    duration: track.info.duration,
+    uri: track.info.uri,
     artworkUrl: track.info.artworkUrl || null,
     sourceName: track.info.sourceName,
-    isStream:   track.info.isStream,
+    isStream: track.info.isStream,
   };
 }
 
@@ -26,14 +26,14 @@ function serializeTrack(track) {
 function serializePlayer(player) {
   if (!player) return null;
   return {
-    guildId:    player.guildId,
-    playing:    player.playing,
-    paused:     player.paused,
-    volume:     player.volume,
-    position:   player.position,
-    autoplay:   player.get('autoplay') ?? false,
-    current:    serializeTrack(player.queue.current),
-    queue:      (player.queue.tracks || []).map(serializeTrack),
+    guildId: player.guildId,
+    playing: player.playing,
+    paused: player.paused,
+    volume: player.volume,
+    position: player.position,
+    autoplay: player.get('autoplay') ?? false,
+    current: serializeTrack(player.queue.current),
+    queue: (player.queue.tracks || []).map(serializeTrack),
   };
 }
 
@@ -52,7 +52,7 @@ async function main() {
 
   // ── 4. Bridge: Lavalink events → WebSocket broadcasts ────────────────────
   const manager = getManager();
-  const ws      = getWsServer();
+  const ws = getWsServer();
 
   manager.on('trackStart', (player, track) => {
     const payload = { type: 'TRACK_START', state: serializePlayer(player) };
@@ -60,7 +60,7 @@ async function main() {
 
     // Update DB guild entry on new track
     db.upsertGuild(player.guildId, {
-      volume:   player.volume,
+      volume: player.volume,
       autoplay: player.get('autoplay') ? 1 : 0,
     });
   });
@@ -86,7 +86,7 @@ async function main() {
       const last = player.get('lastTrack');
       if (!last) return;
       try {
-        const query  = `${last.info.author} - ${last.info.title}`;
+        const query = `${last.info.author} - ${last.info.title}`;
         const result = await player.search({ query, source: 'youtube' }, 'autoplay');
         if (result.tracks && result.tracks.length > 1) {
           // Exclude exact same URI, pick randomly from top 5
@@ -114,7 +114,7 @@ async function main() {
     for (const [guildId, player] of manager.players) {
       if (player.playing && !player.paused) {
         ws.broadcast(guildId, {
-          type:     'POSITION_UPDATE',
+          type: 'POSITION_UPDATE',
           position: player.position,
           guildId,
         });
