@@ -21,7 +21,6 @@ export default function Search({ guildId }) {
     const [query, setQuery] = useState('');
     const [source, setSource] = useState('youtube');
     const [results, setResults] = useState([]);
-    const [visibleResults, setVisibleResults] = useState(20);
     const [loading, setLoading] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
     const [offset, setOffset] = useState(0);
@@ -55,7 +54,6 @@ export default function Search({ guildId }) {
         const timer = setTimeout(() => {
             // Reset and search
             setOffset(0);
-            setVisibleResults(20);
             setHasMore(true);
             performSearch(true);
         }, 500);
@@ -84,41 +82,30 @@ export default function Search({ guildId }) {
         else setLoadingMore(true);
 
         try {
-            // For YouTube/SoundCloud, we fetch a large batch (100) initially because offsets are not supported.
-            // For Spotify, we fetch 20 at a time with real offsets.
-            const isSpotify = source === 'spotify';
-            const fetchLimit = isSpotify ? 20 : 100;
             const currentOffset = isInitial ? 0 : offset;
-
-            // If it's NOT Spotify and we already have results, we just increase visibility (local pagination)
-            if (!isSpotify && !isInitial) {
-                setTimeout(() => {
-                    setVisibleResults(prev => {
-                        const next = prev + 20;
-                        if (next >= results.length) setHasMore(false);
-                        return next;
-                    });
-                    setLoadingMore(false);
-                }, 400); // Small fake delay for UX
-                return;
-            }
-
             const res = await axios.get('/api/search', {
-                params: { q: query, source, offset: currentOffset, limit: fetchLimit }
+                params: { q: query, source, offset: currentOffset, limit: 20 }
             });
             
             const newTracks = res.data.tracks || [];
             
             if (isInitial) {
                 setResults(newTracks);
-                setOffset(newTracks.length);
-                setVisibleResults(20);
-                setHasMore(newTracks.length > 0);
+                setOffset(20);
             } else {
-                // This block should theoretically only trigger for Spotify now
                 setResults(prev => [...prev, ...newTracks]);
-                setOffset(prev => prev + newTracks.length);
-                if (newTracks.length < 20) setHasMore(false);
+                setOffset(prev => prev + 20);
+            }
+
+            // If we got fewer results than requested, it means we reached the end
+            if (newTracks.length < 20) {
+                setHasMore(false);
+            }
+            
+            // For YouTube/SoundCloud, Lavalink doesn't support offset, 
+            // so we stop after 1 page to avoid duplicates unless it's Spotify
+            if (source !== 'spotify' && newTracks.length > 0) {
+                setHasMore(false);
             }
 
         } catch (err) {
@@ -228,7 +215,7 @@ export default function Search({ guildId }) {
                     </div>
                 )}
 
-                {!loading && results.slice(0, visibleResults).map((track, i) => (
+                {!loading && results.map((track, i) => (
                     <div 
                         key={i} 
                         className="flex items-center gap-4 p-3.5 hover:bg-white/5 border border-transparent hover:border-white/10 rounded-2xl group transition cursor-pointer relative overflow-hidden" 
