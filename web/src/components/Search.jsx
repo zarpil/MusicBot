@@ -71,6 +71,16 @@ export default function Search({ guildId }) {
     const handleSubmit = (e) => {
         if (e) e.preventDefault();
         
+        const trimmedQuery = query.trim();
+        if (!trimmedQuery) return;
+
+        // If it's a URL, send the raw URL to the backend so it can resolve playlists
+        if (trimmedQuery.startsWith('http')) {
+            handlePlay({ uri: trimmedQuery, title: 'Enlace externo' });
+            setQuery('');
+            return;
+        }
+
         // If results are already here and we hit Enter, play the first one
         if (results.length > 0) {
             handlePlay(results[0]);

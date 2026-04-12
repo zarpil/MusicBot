@@ -156,17 +156,19 @@ function initWsServer(httpServer, getManager) {
                 }
 
                 if (res && res.loadType === 'playlist') {
-                  for (const t of res.tracks) {
+                  const tracks = res.tracks || [];
+                  for (const t of tracks) {
                     await player.queue.add(t);
                   }
-                  send(ws, { type: 'SUCCESS', message: `Añadida lista: ${res.playlist.name} (${res.tracks.length} canciones)` });
+                  const listName = res.playlist?.name || res.playlist?.title || 'Lista de reproducción';
+                  send(ws, { type: 'SUCCESS', message: `Añadida lista: ${listName} (${tracks.length} canciones)` });
                 } else if (trackToLoad) {
                   await player.queue.add(trackToLoad);
                   send(ws, { type: 'SUCCESS', message: `Añadido: ${trackToLoad.info.title}` });
                 } else {
                   console.warn(`[WS] No se pudo resolver la pista: ${msg.track?.title}`);
                   send(ws, { type: 'ERROR', message: 'No se pudo encontrar la pista de audio o está bloqueada' });
-                  return; // Stop here if nothing worked
+                  return;
                 }
 
                 // Only start playing if nothing was playing
