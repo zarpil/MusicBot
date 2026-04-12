@@ -155,21 +155,29 @@ function initWsServer(httpServer, getManager) {
                     }
                 }
 
-                if (trackToLoad) {
+                if (res && res.loadType === 'playlist') {
+                  for (const t of res.tracks) {
+                    await player.queue.add(t);
+                  }
+                  send(ws, { type: 'SUCCESS', message: `Añadida lista: ${res.playlist.name} (${res.tracks.length} canciones)` });
+                } else if (trackToLoad) {
                   await player.queue.add(trackToLoad);
                   send(ws, { type: 'SUCCESS', message: `Añadido: ${trackToLoad.info.title}` });
-                  // Only start playing if nothing is currently in the player
-                  if (!player.queue.current) {
-                    await player.play();
-                  }
-                  broadcast(guildId, {
-                    type: 'STATE_SYNC',
-                    state: serializePlayer(player),
-                  });
                 } else {
                   console.warn(`[WS] No se pudo resolver la pista: ${msg.track?.title}`);
                   send(ws, { type: 'ERROR', message: 'No se pudo encontrar la pista de audio o está bloqueada' });
+                  return; // Stop here if nothing worked
                 }
+
+                // Only start playing if nothing was playing
+                if (!player.queue.current) {
+                  await player.play();
+                }
+
+                broadcast(guildId, {
+                  type: 'STATE_SYNC',
+                  state: serializePlayer(player),
+                });
               } catch (err) {
                 console.error('[WS] Enqueue error:', err);
                 send(ws, { type: 'ERROR', message: 'Error al procesar la pista' });
