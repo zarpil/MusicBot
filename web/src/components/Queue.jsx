@@ -12,7 +12,7 @@ function formatTime(ms) {
 
 export default function Queue() {
   const { queue } = usePlayerStore(state => state.state);
-  const { removeTrack, moveTrack, jumpToTrack } = usePlayerStore();
+  const { removeTrack, moveTrack, jumpToTrack, clearQueue } = usePlayerStore();
 
   const onDragEnd = (result) => {
     if (!result.destination) return;
@@ -23,7 +23,21 @@ export default function Queue() {
 
   return (
     <div className="flex flex-col h-full bg-surfaceHighlight/30 rounded-xl p-4 overflow-hidden border border-white/5">
-      <h3 className="font-bold text-xl mb-4 text-white">Cola</h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-bold text-xl text-white">Cola</h3>
+        {queue.length > 0 && (
+          <button 
+            onClick={() => {
+              if (window.confirm('¿Estás seguro de que quieres vaciar toda la cola?')) {
+                clearQueue();
+              }
+            }}
+            className="text-[10px] uppercase tracking-wider font-bold text-textSecondary hover:text-red-400 transition-colors px-2 py-1 rounded-md hover:bg-red-400/10"
+          >
+            Vaciar cola
+          </button>
+        )}
+      </div>
 
       {queue.length === 0 ? (
         <div className="text-sm text-textSecondary flex-1 flex items-center justify-center">

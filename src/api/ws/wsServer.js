@@ -129,6 +129,7 @@ function initWsServer(httpServer, getManager) {
                   avatar: user.avatar
                 };
 
+                let res = null;
                 try {
                   res = await player.search(query, requester);
                 } catch (err) {
@@ -197,6 +198,16 @@ function initWsServer(httpServer, getManager) {
               broadcast(guildId, {
                 type:  'QUEUE_UPDATE',
                 queue: tracks.map(serializeTrack),
+              });
+            }
+            break;
+
+          case 'CLEAR_QUEUE':
+            if (player) {
+              player.queue.tracks = [];
+              broadcast(guildId, {
+                type:  'QUEUE_UPDATE',
+                queue: [],
               });
             }
             break;

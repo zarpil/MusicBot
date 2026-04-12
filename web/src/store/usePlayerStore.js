@@ -109,6 +109,7 @@ const usePlayerStore = create((set, get) => ({
   removeTrack: (index) => get().sendCommand('REMOVE_TRACK', { index }),
   moveTrack: (fromIndex, toIndex) => get().sendCommand('MOVE_TRACK', { fromIndex, toIndex }),
   jumpToTrack: (index) => get().sendCommand('JUMP_TO_TRACK', { index }),
+  clearQueue: () => get().sendCommand('CLEAR_QUEUE'),
 }));
 
 export default usePlayerStore;
