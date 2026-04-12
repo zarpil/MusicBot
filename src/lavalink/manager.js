@@ -70,27 +70,45 @@ function createManager(discordClient) {
     
     // Autoplay / Radio logic
     const isAutoplay = player.get('autoplay');
-    if (isAutoplay && player.queue.tracks.length === 0 && payload?.reason !== 'replaced') {
+    console.log(`[Lavalink] Autoplay state for ${player.guildId}: ${isAutoplay}, queue length: ${player.queue.tracks.length}`);
+
+    if (isAutoplay && player.queue.tracks.length === 0 && (payload?.reason === 'finished' || payload?.reason === 'stopped')) {
       try {
         console.log(`[Lavalink] Autoplay: buscando canción relacionada para "${track.info.title}"...`);
         
-        // Use the previous track's title and author to find something related
-        const query = `ytmsearch:${track.info.title} ${track.info.author} related`;
-        const res = await player.search(query, track.requester || 'Autoplay');
+        // Try YouTube Music search first, then regular YouTube search
+        let query = `ytmsearch:${track.info.title} ${track.info.author} related`;
+        let res = await player.search(query, track.requester || 'Autoplay');
         
-        if (res.tracks.length > 0) {
-          // Add the first result (typically the most related)
-          const nextTrack = res.tracks[0];
+        if (!res || !res.tracks || res.tracks.length === 0) {
+          console.log(`[Lavalink] Autoplay: no ytmsearch results, trying regular ytsearch...`);
+          query = `ytsearch:${track.info.title} ${track.info.author} related music`;
+          res = await player.search(query, track.requester || 'Autoplay');
+        }
+
+        if (res && res.tracks && res.tracks.length > 0) {
+          // Find a track that isn't the one that just finished
+          const nextTrack = res.tracks.find(t => t.info.uri !== track.info.uri) || res.tracks[0];
+          
+          console.log(`[Lavalink] Autoplay: añadiendo "${nextTrack.info.title}" a la cola`);
           await player.queue.add(nextTrack);
-          console.log(`[Lavalink] Autoplay: añadiendo "${nextTrack.info.title}"`);
           
-          if (!player.playing) await player.play();
+          if (!player.playing && !player.paused) {
+            console.log(`[Lavalink] Autoplay: iniciando reproducción de pista automática`);
+            await player.play();
+          }
           
-          // Broadcast update to web clients if possible
+          // Broadcast update to web clients
           try {
-            const { broadcast, serializePlayer } = require('../api/ws/wsServer');
-            broadcast(player.guildId, { type: 'STATE_SYNC', state: serializePlayer(player) });
-          } catch (e) { /* wsServer might not be available yet */ }
+            const ws = require('../api/ws/wsServer');
+            if (ws && ws.broadcast) {
+              ws.broadcast(player.guildId, { type: 'STATE_SYNC', state: ws.serializePlayer(player) });
+            }
+          } catch (e) {
+            console.warn('[Lavalink] Autoplay skip broadcast: wsServer not ready');
+          }
+        } else {
+          console.warn(`[Lavalink] Autoplay: No se encontraron canciones relacionadas para "${track.info.title}"`);
         }
       } catch (err) {
         console.error('[Lavalink] Autoplay error:', err);
