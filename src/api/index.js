@@ -12,6 +12,7 @@ const guildsRouter    = require('./routes/guilds');
 const playlistsRouter = require('./routes/playlists');
 const searchRouter    = require('./routes/search');
 const authRouter      = require('./routes/auth');
+const historyRouter   = require('./routes/history');
 const { requireAuth } = require('./middleware/auth');
 
 /**
