@@ -37,6 +37,7 @@ async function initApi(discordClient) {
   app.use('/api/auth',      authRouter);
   app.use('/api/guilds',    requireAuth, guildsRouter);
   app.use('/api/playlists', requireAuth, playlistsRouter);
+  app.use('/api/history',   requireAuth, historyRouter);
   app.use('/api/search',    requireAuth, searchRouter);
 
   // Health check

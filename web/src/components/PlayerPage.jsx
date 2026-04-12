@@ -7,6 +7,7 @@ import Sidebar from './Sidebar';
 import BottomPlayer from './BottomPlayer';
 import Search from './Search';
 import Queue from './Queue';
+import History from './History';
 
 export default function PlayerPage() {
   const { guildId } = useParams();
@@ -14,6 +15,8 @@ export default function PlayerPage() {
   const connect = usePlayerStore(state => state.connect);
   const disconnect = usePlayerStore(state => state.disconnect);
   const { active } = usePlayerStore(state => state.state);
+
+  const [view, setView] = useState('player'); // 'player' or 'history'
 
 
   useEffect(() => {
@@ -24,7 +27,7 @@ export default function PlayerPage() {
   return (
     <div className="flex flex-col h-screen w-full bg-background text-white">
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar guildId={guildId} />
+        <Sidebar guildId={guildId} activeView={view} setView={setView} />
 
         <main className="flex-1 flex flex-col min-w-0 bg-surface m-0 md:m-2 mb-0 rounded-t-none md:rounded-t-xl overflow-hidden">
           {/* Mobile Header */}
@@ -40,10 +43,16 @@ export default function PlayerPage() {
 
           <div className="p-4 md:p-6 overflow-y-auto flex-1">
             {active ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
-                <Search guildId={guildId} />
-                <Queue />
-              </div>
+              <>
+                {view === 'player' ? (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
+                    <Search guildId={guildId} />
+                    <Queue />
+                  </div>
+                ) : (
+                  <History guildId={guildId} />
+                )}
+              </>
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-center">
                 <h2 className="text-2xl font-bold mb-2">El bot no esta en ningun canal de voz</h2>

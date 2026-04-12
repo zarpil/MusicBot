@@ -77,6 +77,13 @@ async function main() {
       volume: player.volume,
       autoplay: player.get('autoplay') ? 1 : 0,
     });
+
+    // Record in history
+    try {
+      db.addHistoryEntry(player.guildId, track);
+    } catch (err) {
+      console.error('[History] Error recording track:', err.message);
+    }
   });
 
   manager.on('trackEnd', (player, track) => {

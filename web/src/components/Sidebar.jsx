@@ -1,7 +1,7 @@
-import { Home, Search as SearchIcon, Library, ArrowLeft } from 'lucide-react';
+import { Home, Search as SearchIcon, Library, ArrowLeft, History } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 
-export default function Sidebar({ guildId }) {
+export default function Sidebar({ guildId, activeView, setView }) {
   const navigate = useNavigate();
 
   return (
@@ -21,8 +21,19 @@ export default function Sidebar({ guildId }) {
           </NavLink>
         </li>
         <li>
-          <div className="flex items-center gap-4 text-white font-bold transition cursor-pointer">
+          <div 
+            onClick={() => setView('player')}
+            className={`flex items-center gap-4 font-bold transition cursor-pointer ${activeView === 'player' ? 'text-primary' : 'text-textSecondary hover:text-white'}`}
+          >
             <SearchIcon size={24} /> Reproductor
+          </div>
+        </li>
+        <li>
+          <div 
+            onClick={() => setView('history')}
+            className={`flex items-center gap-4 font-bold transition cursor-pointer ${activeView === 'history' ? 'text-primary' : 'text-textSecondary hover:text-white'}`}
+          >
+            <History size={24} /> Historial
           </div>
         </li>
       </ul>

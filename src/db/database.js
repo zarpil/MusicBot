@@ -53,6 +53,21 @@ function init() {
       position    INTEGER DEFAULT 0,
       FOREIGN KEY (playlist_id) REFERENCES playlists(id) ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS history (
+      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      guild_id        TEXT NOT NULL,
+      title           TEXT NOT NULL,
+      author          TEXT,
+      uri             TEXT NOT NULL,
+      duration        INTEGER DEFAULT 0,
+      artwork_url     TEXT,
+      source_name     TEXT,
+      requester_name  TEXT,
+      requester_avatar TEXT,
+      played_at       DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (guild_id) REFERENCES guilds(id) ON DELETE CASCADE
+    );
   `);
 
   console.log('[DB] SQLite database ready at', DB_PATH);
@@ -140,6 +155,30 @@ function removeTrackFromPlaylist(trackId) {
   return getDb().prepare('DELETE FROM playlist_tracks WHERE id = ?').run(trackId);
 }
 
+// ── History helpers ───────────────────────────────────────────────────────────
+function addHistoryEntry(guildId, track) {
+  return getDb().prepare(`
+    INSERT INTO history (guild_id, title, author, uri, duration, artwork_url, source_name, requester_name, requester_avatar)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    guildId,
+    track.info.title,
+    track.info.author || '',
+    track.info.uri,
+    track.info.duration || 0,
+    track.info.artworkUrl || null,
+    track.info.sourceName || 'youtube',
+    track.requester?.username || null,
+    track.requester?.avatar || null
+  );
+}
+
+function getHistory(guildId, limit = 50) {
+  return getDb().prepare(`
+    SELECT * FROM history WHERE guild_id = ? ORDER BY played_at DESC LIMIT ?
+  `).all(guildId, limit);
+}
+
 module.exports = {
   init,
   getDb,
@@ -153,4 +192,6 @@ module.exports = {
   getPlaylistTracks,
   addTrackToPlaylist,
   removeTrackFromPlaylist,
+  addHistoryEntry,
+  getHistory,
 };
