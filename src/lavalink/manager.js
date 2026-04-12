@@ -71,25 +71,51 @@ function createManager(discordClient) {
     const isAutoplay = player.get('autoplay');
     const queueLen = player.queue.tracks.length;
     
-    console.log(`[Lavalink] Autoplay Trigger CHECK for ${player.guildId}: isAutoplay=${isAutoplay}, queueLen=${queueLen}`);
-
     if (isAutoplay && queueLen === 0) {
       try {
-        console.log(`[Lavalink] Autoplay: buscando sugerencia para "${lastTrack.info.title}"...`);
+        console.log(`[Lavalink] Autoplay: buscando sugerencia diferente a "${lastTrack.info.title}"`);
         
+        // Track recently played titles to avoid loops (stored in player object)
+        let playedTitles = player.get('playedTitles') || [];
+        if (!playedTitles.includes(lastTrack.info.title)) {
+            playedTitles.push(lastTrack.info.title);
+            if (playedTitles.length > 20) playedTitles.shift(); // Keep last 20
+            player.set('playedTitles', playedTitles);
+        }
+
         const queries = [
-            `ytsearch:${lastTrack.info.title} ${lastTrack.info.author} related`,
-            `ytmsearch:${lastTrack.info.author} radio`,
-            `ytsearch:mix ${lastTrack.info.title}`
+            `ytmsearch:${lastTrack.info.author} related`, // Artist radio (best for variety)
+            `ytsearch:${lastTrack.info.author} top music`,
+            `ytsearch:similar tracks to ${lastTrack.info.title} ${lastTrack.info.author}`
         ];
 
         let nextTrack = null;
         for (const q of queries) {
-            console.log(`[Lavalink] Autoplay: intentando búsqueda "${q}"`);
             const res = await player.search(q, 'Autoplay');
             if (res && res.tracks && res.tracks.length > 0) {
-                nextTrack = res.tracks.find(t => t.info.uri !== lastTrack.info.uri) || res.tracks[0];
-                if (nextTrack) break;
+                // FILTER: Ignore tracks with same URI, EXTREMELY similar titles, or already played
+                const candidates = res.tracks.filter(t => {
+                    const isSameUri = t.info.uri === lastTrack.info.uri;
+                    const isAlreadyPlayed = playedTitles.some(title => t.info.title.toLowerCase().includes(title.toLowerCase()));
+                    const isSameSongVersion = t.info.title.toLowerCase().includes(lastTrack.info.title.toLowerCase()) || 
+                                           lastTrack.info.title.toLowerCase().includes(t.info.title.toLowerCase());
+                    return !isSameUri && !isAlreadyPlayed && !isSameSongVersion;
+                });
+
+                if (candidates.length > 0) {
+                    // Random pick from top 5 candidates for more diversity
+                    nextTrack = candidates[Math.floor(Math.random() * Math.min(5, candidates.length))];
+                    break;
+                }
+            }
+        }
+
+        // Fallback: if all filters fail, pick a random track from first search to at least have music
+        if (!nextTrack) {
+            console.log('[Lavalink] Autoplay: No se encontraron candidatos únicos, usando fallback...');
+            const fallbackRes = await player.search(`ytsearch:${lastTrack.info.author} mix`, 'Autoplay');
+            if (fallbackRes.tracks.length > 0) {
+                nextTrack = fallbackRes.tracks.find(t => t.info.uri !== lastTrack.info.uri) || fallbackRes.tracks[0];
             }
         }
 
@@ -97,12 +123,8 @@ function createManager(discordClient) {
           console.log(`[Lavalink] Autoplay: Añadiendo "${nextTrack.info.title}"`);
           await player.queue.add(nextTrack);
           
-          if (!player.playing) {
-             console.log(`[Lavalink] Autoplay: Reproduciendo...`);
-             await player.play();
-          }
+          if (!player.playing) await player.play();
           
-          // Broadcast to UI
           try {
             const ws = require('../api/ws/wsServer');
             if (ws && ws.broadcast) {
