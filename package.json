@@ -12,8 +12,8 @@
     "axios": "^1.7.2",
     "better-sqlite3": "^9.6.0",
     "cors": "^2.8.5",
-    "discord.js": "^14.15.3",
-    "dotenv": "^16.4.5",
+    "discord.js": "^14.26.2",
+    "dotenv": "^16.6.1",
     "express": "^4.19.2",
     "lavalink-client": "^2.2.2",
     "ws": "^8.17.1"

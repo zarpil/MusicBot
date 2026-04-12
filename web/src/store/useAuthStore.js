@@ -1,13 +1,38 @@
 import { create } from 'zustand';
 import axios from 'axios';
 
+const getStorageItem = (key) => {
+  try {
+    return localStorage.getItem(key);
+  } catch (e) {
+    console.warn('LocalStorage is not accessible:', e);
+    return null;
+  }
+};
+
+const setStorageItem = (key, value) => {
+  try {
+    localStorage.setItem(key, value);
+  } catch (e) {
+    console.warn('LocalStorage is not accessible:', e);
+  }
+};
+
+const removeStorageItem = (key) => {
+  try {
+    localStorage.removeItem(key);
+  } catch (e) {
+    console.warn('LocalStorage is not accessible:', e);
+  }
+};
+
 const useAuthStore = create((set, get) => ({
-  token: localStorage.getItem('token') || null,
+  token: getStorageItem('token') || null,
   user: null,
-  loading: !!localStorage.getItem('token'),
+  loading: !!getStorageItem('token'),
 
   setAuth: (token, user) => {
-    localStorage.setItem('token', token);
+    setStorageItem('token', token);
     // Configure axios for future requests
     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     set({ token, user, loading: false });
@@ -27,14 +52,14 @@ const useAuthStore = create((set, get) => ({
       set({ user: res.data, loading: false });
     } catch (err) {
       console.error('Session expired or invalid:', err);
-      localStorage.removeItem('token');
+      removeStorageItem('token');
       delete axios.defaults.headers.common['Authorization'];
       set({ token: null, user: null, loading: false });
     }
   },
 
   logout: () => {
-    localStorage.removeItem('token');
+    removeStorageItem('token');
     delete axios.defaults.headers.common['Authorization'];
     set({ token: null, user: null });
   }
