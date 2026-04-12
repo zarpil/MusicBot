@@ -123,9 +123,14 @@ function initWsServer(httpServer, getManager) {
               try {
                 const query = msg.track.uri || msg.track._searchQuery || `${msg.track.author} - ${msg.track.title}`;
                 console.log(`[WS] Resolviendo pista para encolar: ${query}`);
-                let res = null;
+                const requester = {
+                  username: user.username,
+                  id: user.id,
+                  avatar: user.avatar
+                };
+
                 try {
-                  res = await player.search(query, 'dashboard');
+                  res = await player.search(query, requester);
                 } catch (err) {
                   console.warn(`[WS] First resolve attempt failed for "${query}": ${err.message}`);
                 }
@@ -139,14 +144,14 @@ function initWsServer(httpServer, getManager) {
                    const searchTerms = videoId || q;
 
                    console.warn(`[WS] Direct YT resolve failed/errored. Trying ytmsearch fallback for: ${searchTerms}`);
-                   try {
-                     const fallbackRes = await player.search(`ytmsearch:${searchTerms}`, 'dashboard');
-                     if (fallbackRes && fallbackRes.tracks && fallbackRes.tracks.length > 0) {
-                        trackToLoad = fallbackRes.tracks[0];
-                     }
-                   } catch (fallbackErr) {
-                     console.error(`[WS] Fallback resolve also failed:`, fallbackErr.message);
-                   }
+                    try {
+                      const fallbackRes = await player.search(`ytmsearch:${searchTerms}`, requester);
+                      if (fallbackRes && fallbackRes.tracks && fallbackRes.tracks.length > 0) {
+                         trackToLoad = fallbackRes.tracks[0];
+                      }
+                    } catch (fallbackErr) {
+                      console.error(`[WS] Fallback resolve also failed:`, fallbackErr.message);
+                    }
                 }
 
                 if (trackToLoad) {
@@ -256,6 +261,19 @@ function getWsServer() {
 // ── Serialisation helpers (duplicated from index.js to avoid circular dep) ────
 function serializeTrack(track) {
   if (!track) return null;
+  // Requester could be a string (legacy/direct) or a user object
+  let requesterInfo = null;
+  if (track.requester) {
+    if (typeof track.requester === 'object') {
+      requesterInfo = {
+        username: track.requester.username || track.requester.tag,
+        avatar: track.requester.avatar || (track.requester.displayAvatarURL ? track.requester.displayAvatarURL({ size: 32 }) : null)
+      };
+    } else {
+      requesterInfo = { username: track.requester, avatar: null };
+    }
+  }
+
   return {
     encoded:    track.encoded,
     title:      track.info.title,
@@ -265,6 +283,7 @@ function serializeTrack(track) {
     artworkUrl: track.info.artworkUrl || null,
     sourceName: track.info.sourceName,
     isStream:   track.info.isStream,
+    requester:  requesterInfo,
   };
 }
 

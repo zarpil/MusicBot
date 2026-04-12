@@ -29,6 +29,19 @@ router.get('/:id/player', (req, res) => {
 
     function serializeTrack(track) {
       if (!track) return null;
+      // Requester could be a string (legacy/direct) or a user object
+      let requesterInfo = null;
+      if (track.requester) {
+        if (typeof track.requester === 'object') {
+          requesterInfo = {
+            username: track.requester.username || track.requester.tag,
+            avatar: track.requester.avatar || (track.requester.displayAvatarURL ? track.requester.displayAvatarURL({ size: 32 }) : null)
+          };
+        } else {
+          requesterInfo = { username: track.requester, avatar: null };
+        }
+      }
+
       return {
         encoded:    track.encoded,
         title:      track.info.title,
@@ -38,6 +51,7 @@ router.get('/:id/player', (req, res) => {
         artworkUrl: track.info.artworkUrl || null,
         sourceName: track.info.sourceName,
         isStream:   track.info.isStream,
+        requester:  requesterInfo,
       };
     }
 

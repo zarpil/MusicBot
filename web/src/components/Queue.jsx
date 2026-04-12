@@ -72,7 +72,19 @@ export default function Queue() {
 
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-semibold text-white truncate">{track.title}</div>
-                          <div className="text-[10px] text-textSecondary truncate uppercase tracking-wider">{track.author}</div>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <div className="text-[10px] text-textSecondary truncate uppercase tracking-wider">{track.author}</div>
+                            {track.requester && (
+                              <div className="flex items-center gap-1.5 px-1.5 py-0.5 bg-white/5 rounded-full border border-white/5">
+                                {track.requester.avatar ? (
+                                  <img src={track.requester.avatar} className="w-3.5 h-3.5 rounded-full object-cover" alt="" />
+                                ) : (
+                                  <div className="w-3.5 h-3.5 bg-white/10 rounded-full flex items-center justify-center text-[7px]">👤</div>
+                                )}
+                                <span className="text-[9px] text-textSecondary font-medium truncate max-w-[60px]">{track.requester.username}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
 
                         <div className="flex items-center gap-3">

@@ -10,15 +10,29 @@ const db = require('./db/database');
 // ── Serialise a Lavalink track into a plain object for JSON ──────────────────
 function serializeTrack(track) {
   if (!track) return null;
+  // Requester could be a string (legacy/direct) or a user object
+  let requesterInfo = null;
+  if (track.requester) {
+    if (typeof track.requester === 'object') {
+      requesterInfo = {
+        username: track.requester.username || track.requester.tag,
+        avatar: track.requester.avatar || (track.requester.displayAvatarURL ? track.requester.displayAvatarURL({ size: 32 }) : null)
+      };
+    } else {
+      requesterInfo = { username: track.requester, avatar: null };
+    }
+  }
+
   return {
-    encoded: track.encoded,
-    title: track.info.title,
-    author: track.info.author,
-    duration: track.info.duration,
-    uri: track.info.uri,
+    encoded:    track.encoded,
+    title:      track.info.title,
+    author:     track.info.author,
+    duration:   track.info.duration,
+    uri:        track.info.uri,
     artworkUrl: track.info.artworkUrl || null,
     sourceName: track.info.sourceName,
-    isStream: track.info.isStream,
+    isStream:   track.info.isStream,
+    requester:  requesterInfo,
   };
 }
 
@@ -86,8 +100,9 @@ async function main() {
       const last = player.get('lastTrack');
       if (!last) return;
       try {
-        const query = `${last.info.author} - ${last.info.title}`;
-        const result = await player.search({ query, source: 'youtube' }, 'autoplay');
+        const query  = `${last.info.author} - ${last.info.title}`;
+        const requester = { username: 'Autoplay', avatar: null };
+        const result = await player.search({ query, source: 'youtube' }, requester);
         if (result.tracks && result.tracks.length > 1) {
           // Exclude exact same URI, pick randomly from top 5
           const candidates = result.tracks

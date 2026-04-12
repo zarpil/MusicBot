@@ -62,7 +62,19 @@ export default function BottomPlayer() {
         )}
         <div className="overflow-hidden flex-1">
           <div className="truncate font-semibold hover:underline cursor-pointer" title={current.title}>{current.title}</div>
-          <div className="text-xs text-textSecondary truncate">{current.author}</div>
+          <div className="flex items-center gap-2">
+             <div className="text-xs text-textSecondary truncate">{current.author}</div>
+             {current.requester && (
+               <div className="flex items-center gap-1 text-[10px] text-primary font-medium bg-primary/5 px-2 py-0.5 rounded-full border border-primary/10">
+                 {current.requester.avatar ? (
+                   <img src={current.requester.avatar} className="w-3 h-3 rounded-full object-cover" alt="" />
+                 ) : (
+                   <div className="w-3 h-3 bg-primary/20 rounded-full flex items-center justify-center text-[6px]">👤</div>
+                 )}
+                 <span className="truncate max-w-[80px]">{current.requester.username}</span>
+               </div>
+             )}
+          </div>
         </div>
       </div>
 
