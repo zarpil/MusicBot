@@ -149,14 +149,32 @@ function createManager(discordClient) {
     const reason = payload?.reason || 'unknown';
     console.log(`[Lavalink] trackEnd Event: title="${track?.info?.title}", reason="${reason}"`);
     
+    // If the song was replaced by the player itself (skipping), we don't necessarily want to trigger autoplay
+    // because trackEnd will fire again for the new track.
     if (reason === 'replaced' && payload?.byPlayer) return;
     
-    await handleAutoplay(player, track);
+    // Prevent double execution if trackEnd and queueEnd fire close together
+    if (player.get('isProcessingAutoplay')) return;
+    player.set('isProcessingAutoplay', true);
+    
+    try {
+      await handleAutoplay(player, track);
+    } finally {
+      player.set('isProcessingAutoplay', false);
+    }
   });
 
   _manager.on('queueEnd', async (player, track, payload) => {
     console.log(`[Lavalink] queueEnd Event in ${player.guildId}`);
-    await handleAutoplay(player, track);
+    
+    if (player.get('isProcessingAutoplay')) return;
+    player.set('isProcessingAutoplay', true);
+
+    try {
+      await handleAutoplay(player, track);
+    } finally {
+      player.set('isProcessingAutoplay', false);
+    }
   });
   
   _manager.on('trackStuck', (player, track, payload) => {

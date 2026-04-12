@@ -167,6 +167,23 @@ function initWsServer(httpServer, getManager) {
                   send(ws, { type: 'SUCCESS', message: `Añadida lista: ${listName} (${tracks.length} canciones)` });
                 } else if (trackToLoad) {
                   await player.queue.add(trackToLoad);
+                  
+                  // MANUAL PRIORITY: If we just added a manual track and the queue only 
+                  // contains this track + 1 autoplay track, move the manual one to the front.
+                  if (player.queue.tracks.length === 2) {
+                    const firstTrack = player.queue.tracks[0];
+                    // Check if the first track was added by Autoplay
+                    const isFirstAutoplay = firstTrack.requester === 'Autoplay' || 
+                                           (typeof firstTrack.requester === 'object' && firstTrack.requester.username === 'Autoplay');
+                    
+                    if (isFirstAutoplay) {
+                      console.log('[WS] Manual Priority: Moviendo canción del usuario al puesto N1');
+                      const tracks = player.queue.tracks;
+                      const [manualTrack] = tracks.splice(1, 1);
+                      tracks.unshift(manualTrack);
+                    }
+                  }
+
                   send(ws, { type: 'SUCCESS', message: `Añadido: ${trackToLoad.info.title}` });
                 } else {
                   console.warn(`[WS] No se pudo resolver la pista: ${msg.track?.title}`);
