@@ -137,8 +137,10 @@ export default function BottomPlayer() {
         <input 
           type="range" 
           min="0" max="100" 
-          value={volume}
-          onChange={(e) => setVolume(parseInt(e.target.value))}
+          value={localVolume}
+          onMouseDown={() => setIsDraggingVolume(true)}
+          onMouseUp={() => setIsDraggingVolume(false)}
+          onChange={(e) => setLocalVolume(parseInt(e.target.value))}
           className="w-24 h-1 bg-surfaceHighlight rounded-full appearance-none cursor-pointer accent-white hover:accent-primary transition"
         />
       </div>
