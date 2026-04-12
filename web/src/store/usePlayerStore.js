@@ -54,6 +54,11 @@ const usePlayerStore = create((set, get) => ({
             set({ state: { ...state, loading: false } });
             break;
 
+          case 'ERROR':
+            console.error('WebSocket Error:', msg.message);
+            set({ state: { ...state, loading: false } });
+            break;
+
           case 'POSITION_UPDATE':
             set({ state: { ...state, position: msg.position } });
             break;
