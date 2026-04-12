@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Play, Pause, SkipForward, Volume2, Repeat } from 'lucide-react';
 import usePlayerStore from '../store/usePlayerStore';
 
@@ -19,24 +19,34 @@ export default function BottomPlayer() {
   
   const [localVolume, setLocalVolume] = useState(volume);
   const [isDraggingVolume, setIsDraggingVolume] = useState(false);
+  const ignoreSyncTimer = useRef(null);
 
   // Sync local volume with store when it changes from outside
   useEffect(() => {
-    if (!isDraggingVolume) {
+    if (!isDraggingVolume && !ignoreSyncTimer.current) {
       setLocalVolume(volume);
     }
   }, [volume, isDraggingVolume]);
 
-  // Debounce volume updates to the server
-  useEffect(() => {
-    if (localVolume === volume) return;
+  const handleVolumeChange = (e) => {
+    const val = parseInt(e.target.value);
+    setLocalVolume(val);
     
-    const timer = setTimeout(() => {
-      setVolume(localVolume);
-    }, 150);
+    // Clear existing timer
+    if (ignoreSyncTimer.current) clearTimeout(ignoreSyncTimer.current);
+    
+    // Lock sync for 1.5 seconds to prevent snap-back
+    ignoreSyncTimer.current = setTimeout(() => {
+      ignoreSyncTimer.current = null;
+    }, 1500);
 
-    return () => clearTimeout(timer);
-  }, [localVolume, volume, setVolume]);
+    // Debounce the actual command
+    const debounceTimer = setTimeout(() => {
+      setVolume(val);
+    }, 50);
+
+    return () => clearTimeout(debounceTimer);
+  };
 
   if (loading) {
     return (
@@ -161,7 +171,9 @@ export default function BottomPlayer() {
           value={localVolume}
           onMouseDown={() => setIsDraggingVolume(true)}
           onMouseUp={() => setIsDraggingVolume(false)}
-          onChange={(e) => setLocalVolume(parseInt(e.target.value))}
+          onTouchStart={() => setIsDraggingVolume(true)}
+          onTouchEnd={() => setIsDraggingVolume(false)}
+          onChange={handleVolumeChange}
           className="w-24 h-1 bg-surfaceHighlight rounded-full appearance-none cursor-pointer accent-white hover:accent-primary transition"
         />
       </div>
