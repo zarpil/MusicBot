@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { ArrowLeft, Play, Trash2, Music, User, Clock, Loader2, Plus, Search as SearchIcon } from 'lucide-react';
+import { ArrowLeft, Play, Trash2, Music, User, Clock, Loader2, Plus, Search as SearchIcon, X } from 'lucide-react';
 import usePlayerStore from '../store/usePlayerStore';
 import useAuthStore from '../store/useAuthStore';
 
@@ -18,6 +18,7 @@ export default function PlaylistDetails({ playlistId, onBack }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [isSearching, setIsSearching] = useState(false);
+    const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
 
     const sendCommand = usePlayerStore(state => state.sendCommand);
     const currentUser = useAuthStore(state => state.user);
@@ -72,6 +73,16 @@ export default function PlaylistDetails({ playlistId, onBack }) {
 
     const handlePlayTrack = (track) => {
         sendCommand('ENQUEUE', { track });
+    };
+
+    const handleAddToPlaylist = async (track) => {
+        try {
+            await axios.post(`/api/playlists/${playlistId}/tracks`, { track });
+            fetchDetails(); // Refresh list to show new track
+            // Optional: clear search if you want, but maybe the user wants to add more
+        } catch (err) {
+            alert(err.response?.data?.error || 'Error al añadir canción');
+        }
     };
 
     const handleDeletePlaylist = async () => {
@@ -139,20 +150,28 @@ export default function PlaylistDetails({ playlistId, onBack }) {
                         <span>{playlist.tracks?.length || 0} canciones</span>
                         <span>•</span>
                         <div className="flex items-center gap-4 ml-auto">
-                            <button
+                            <button 
                                 onClick={handlePlayAll}
                                 className="bg-primary hover:bg-green-400 text-black px-8 py-3 rounded-full font-bold flex items-center gap-2 transition-all hover:scale-105 shadow-lg shadow-primary/20"
                             >
                                 <Play size={20} className="fill-black" /> REPRODUCIR TODO
                             </button>
                             {isCreator && (
-                                <button
-                                    onClick={handleDeletePlaylist}
-                                    className="p-3 bg-white/5 hover:bg-red-500/20 text-textSecondary hover:text-red-500 border border-white/10 rounded-full transition-all"
-                                    title="Eliminar lista"
-                                >
-                                    <Trash2 size={20} />
-                                </button>
+                                <>
+                                    <button 
+                                        onClick={() => setIsSearchModalOpen(true)}
+                                        className="bg-white/5 hover:bg-white/10 text-white px-6 py-3 rounded-full font-bold flex items-center gap-2 transition-all border border-white/10"
+                                    >
+                                        <Plus size={20} /> AÑADIR CANCIÓN
+                                    </button>
+                                    <button 
+                                        onClick={handleDeletePlaylist}
+                                        className="p-3 bg-white/5 hover:bg-red-500/20 text-textSecondary hover:text-red-500 border border-white/10 rounded-full transition-all"
+                                        title="Eliminar lista"
+                                    >
+                                        <Trash2 size={20} />
+                                    </button>
+                                </>
                             )}
                         </div>
                     </div>
@@ -219,54 +238,81 @@ export default function PlaylistDetails({ playlistId, onBack }) {
                 </table>
             </div>
 
-            {/* Search and Add Section (Only for Creator) */}
-            {isCreator && (
-                <div className="mt-12 pt-12 border-t border-white/5 pb-10">
-                    <h3 className="text-xl font-bold mb-1">Añadir más canciones</h3>
-                    <p className="text-textSecondary text-sm mb-6">Busca algo para complementar tu lista.</p>
-
-                    <div className="relative mb-6 max-w-xl">
-                        <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-textSecondary" size={18} />
-                        <input 
-                            type="text" 
-                            placeholder="Buscar en YouTube..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-white/5 border border-white/10 text-white rounded-xl py-3 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white/10 transition"
-                        />
-                        {isSearching && (
-                            <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                                <Loader2 className="animate-spin text-primary" size={18} />
+            {/* Search Modal (Only for Creator) */}
+            {isCreator && isSearchModalOpen && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
+                    <div 
+                        className="w-full max-w-2xl bg-[#121212] border border-white/10 rounded-[32px] p-8 shadow-2xl animate-in zoom-in-95 duration-200 relative overflow-hidden"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Decorative background glow */}
+                        <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/10 blur-[80px] rounded-full"></div>
+                        
+                        <div className="flex items-center justify-between mb-8 relative">
+                            <div>
+                                <h3 className="text-2xl font-bold text-white mb-1">Añadir canciones</h3>
+                                <p className="text-textSecondary text-sm">Busca música para complementar "{playlist.name}"</p>
                             </div>
-                        )}
-                    </div>
-
-                    <div className="space-y-2 max-w-2xl">
-                        {searchResults.map((track, i) => (
-                            <div 
-                                key={i}
-                                className="flex items-center gap-4 p-2.5 hover:bg-white/5 rounded-2xl group transition-all border border-transparent hover:border-white/5"
+                            <button 
+                                onClick={() => setIsSearchModalOpen(false)}
+                                className="p-2 hover:bg-white/5 rounded-full text-textSecondary hover:text-white transition-colors"
                             >
-                                <div className="w-10 h-10 bg-surface rounded flex items-center justify-center shrink-0 overflow-hidden">
-                                     {track.artworkUrl ? (
-                                         <img src={track.artworkUrl} className="w-full h-full object-cover" alt="" />
-                                     ) : (
-                                         <Music size={20} className="text-textSecondary opacity-20" />
-                                     )}
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <div className="relative mb-8 relative">
+                            <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-textSecondary" size={20} />
+                            <input 
+                                type="text" 
+                                placeholder="Busca por nombre, artista o enlace..."
+                                value={searchQuery}
+                                autoFocus
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full bg-white/5 border border-white/10 text-white rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition placeholder:text-textSecondary/50 shadow-inner"
+                            />
+                            {isSearching && (
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                                    <Loader2 className="animate-spin text-primary" size={20} />
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="text-sm font-semibold truncate">{track.title}</div>
-                                    <div className="text-[10px] text-textSecondary truncate">{track.author}</div>
+                            )}
+                        </div>
+
+                        <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar relative">
+                            {searchResults.length === 0 && searchQuery && !isSearching && (
+                                <div className="text-center py-8 text-textSecondary italic text-sm">
+                                    No se han encontrado resultados
                                 </div>
-                                <button 
-                                    onClick={() => handleAddToPlaylist(track)}
-                                    className="px-4 py-1.5 bg-white/5 hover:bg-primary text-white hover:text-black rounded-full text-xs font-bold transition-all flex items-center gap-2"
+                            )}
+
+                            {searchResults.map((track, i) => (
+                                <div 
+                                    key={i}
+                                    className="flex items-center gap-4 p-3 hover:bg-white/5 rounded-2xl group transition-all border border-transparent hover:border-white/5"
                                 >
-                                    <Plus size={14} /> Añadir
-                                </button>
-                            </div>
-                        ))}
+                                    <div className="w-12 h-12 bg-surface rounded-xl flex items-center justify-center shrink-0 overflow-hidden shadow-lg">
+                                         {track.artworkUrl ? (
+                                             <img src={track.artworkUrl} className="w-full h-full object-cover" alt="" />
+                                         ) : (
+                                             <Music size={24} className="text-textSecondary opacity-20" />
+                                         )}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="text-sm font-bold text-white truncate">{track.title}</div>
+                                        <div className="text-[11px] text-textSecondary/60 truncate uppercase tracking-wider mt-0.5">{track.author}</div>
+                                    </div>
+                                    <button 
+                                        onClick={() => handleAddToPlaylist(track)}
+                                        className="px-5 py-2 bg-primary hover:bg-green-400 text-black rounded-full text-xs font-bold transition-all flex items-center gap-2 transform active:scale-95 shadow-lg shadow-primary/10"
+                                    >
+                                        <Plus size={14} /> AÑADIR
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
                     </div>
+                    {/* Backdrop Click */}
+                    <div className="absolute inset-0 -z-10" onClick={() => setIsSearchModalOpen(false)}></div>
                 </div>
             )}
         </div>
