@@ -76,9 +76,9 @@ router.get('/', async (req, res) => {
     }
 
     // Default to Lavalink search (ytsearch, ytmsearch, scsearch)
-    let searchPrefix = 'ytsearch';
-    if (source === 'youtube') searchPrefix = 'ytsearch'; // Use standard ytsearch for more results
-    if (source === 'soundcloud') searchPrefix = 'scsearch';
+    let searchPrefix = `ytsearch[${limit}]`;
+    if (source === 'youtube')    searchPrefix = `ytsearch[${limit}]`;
+    if (source === 'soundcloud') searchPrefix = `scsearch[${limit}]`;
 
     // If it's a URL, no prefix
     const query = q.startsWith('http') ? q : `${searchPrefix}:${q}`;
