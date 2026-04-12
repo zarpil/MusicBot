@@ -42,7 +42,6 @@ plugins:
       - ANDROID_TESTSUITE
       - TVHTML5
       - MUSIC
-      - WEB
     oauth:
       enabled: true
       refreshToken: "${YOUTUBE_REFRESH_TOKEN:}"

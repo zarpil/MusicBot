@@ -121,49 +121,32 @@ function initWsServer(httpServer, getManager) {
           case 'ENQUEUE':
             if (player && msg.track) {
               try {
-                let trackToLoad = null;
+                const query = msg.track.uri || msg.track._searchQuery || `${msg.track.author} - ${msg.track.title}`;
+                console.log(`[WS] Resolviendo pista para encolar: ${query}`);
+                let res = null;
+                try {
+                  res = await player.search(query, 'dashboard');
+                } catch (err) {
+                  console.warn(`[WS] First resolve attempt failed for "${query}": ${err.message}`);
+                }
+                
+                let trackToLoad = (res && res.tracks && res.tracks.length > 0) ? res.tracks[0] : null;
 
-                if (msg.track.encoded) {
-                  // Direct bypass if track was already resolved by search API
-                  trackToLoad = {
-                    encoded: msg.track.encoded,
-                    info: {
-                      title: msg.track.title,
-                      author: msg.track.author,
-                      duration: msg.track.duration,
-                      uri: msg.track.uri,
-                      artworkUrl: msg.track.artworkUrl,
-                      sourceName: msg.track.sourceName,
-                    }
-                  };
-                } else {
-                  const query = msg.track.uri || msg.track._searchQuery || `${msg.track.author} - ${msg.track.title}`;
-                  console.log(`[WS] Resolviendo pista para encolar: ${query}`);
-                  let res = null;
-                  try {
-                    res = await player.search(query, 'dashboard');
-                  } catch (err) {
-                    console.warn(`[WS] First resolve attempt failed for "${query}": ${err.message}`);
-                  }
-                  
-                  trackToLoad = (res && res.tracks && res.tracks.length > 0) ? res.tracks[0] : null;
+                // Fallback for YouTube: if direct resolve fails OR errors out, try ytmsearch
+                if (!trackToLoad && (query.includes('youtube.com') || query.includes('youtu.be') || query.startsWith('ytsearch'))) {
+                   const q = query.replace('ytsearch:', '');
+                   const videoId = q.match(/(?:v=|ext\/|embed\/|youtu.be\/)([^&?#/]+)/)?.[1];
+                   const searchTerms = videoId || q;
 
-                  // Fallback for YouTube: if direct resolve fails OR errors out, try ytmsearch
-                  if (!trackToLoad && (query.includes('youtube.com') || query.includes('youtu.be') || query.startsWith('ytsearch'))) {
-                     const q = query.replace('ytsearch:', '');
-                     const videoId = q.match(/(?:v=|ext\/|embed\/|youtu.be\/)([^&?#/]+)/)?.[1];
-                     const searchTerms = videoId || q;
-
-                     console.warn(`[WS] Direct YT resolve failed/errored. Trying ytmsearch fallback for: ${searchTerms}`);
-                     try {
-                       const fallbackRes = await player.search(`ytmsearch:${searchTerms}`, 'dashboard');
-                       if (fallbackRes && fallbackRes.tracks && fallbackRes.tracks.length > 0) {
-                          trackToLoad = fallbackRes.tracks[0];
-                       }
-                     } catch (fallbackErr) {
-                       console.error(`[WS] Fallback resolve also failed:`, fallbackErr.message);
+                   console.warn(`[WS] Direct YT resolve failed/errored. Trying ytmsearch fallback for: ${searchTerms}`);
+                   try {
+                     const fallbackRes = await player.search(`ytmsearch:${searchTerms}`, 'dashboard');
+                     if (fallbackRes && fallbackRes.tracks && fallbackRes.tracks.length > 0) {
+                        trackToLoad = fallbackRes.tracks[0];
                      }
-                  }
+                   } catch (fallbackErr) {
+                     console.error(`[WS] Fallback resolve also failed:`, fallbackErr.message);
+                   }
                 }
 
                 if (trackToLoad) {
