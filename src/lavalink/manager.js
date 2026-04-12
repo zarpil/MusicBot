@@ -120,6 +120,13 @@ function createManager(discordClient) {
         }
 
         if (nextTrack) {
+          // RACE CONDITION FIX: Re-check queue length before adding
+          // If the user added a song while we were searching YouTube, we should abort Autoplay
+          if (player.queue.tracks.length > 0) {
+            console.log(`[Lavalink] Autoplay: Abortando porque el usuario añadió una canción durante la búsqueda.`);
+            return;
+          }
+
           console.log(`[Lavalink] Autoplay: Añadiendo "${nextTrack.info.title}"`);
           await player.queue.add(nextTrack);
           
