@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Play, Pause, SkipForward, Volume2, Repeat } from 'lucide-react';
 import usePlayerStore from '../store/usePlayerStore';
 
@@ -16,6 +16,27 @@ export default function BottomPlayer() {
 
   const [isDragging, setIsDragging] = useState(false);
   const [dragValue, setDragValue] = useState(0);
+  
+  const [localVolume, setLocalVolume] = useState(volume);
+  const [isDraggingVolume, setIsDraggingVolume] = useState(false);
+
+  // Sync local volume with store when it changes from outside
+  useEffect(() => {
+    if (!isDraggingVolume) {
+      setLocalVolume(volume);
+    }
+  }, [volume, isDraggingVolume]);
+
+  // Debounce volume updates to the server
+  useEffect(() => {
+    if (localVolume === volume) return;
+    
+    const timer = setTimeout(() => {
+      setVolume(localVolume);
+    }, 150);
+
+    return () => clearTimeout(timer);
+  }, [localVolume, volume, setVolume]);
 
   if (loading) {
     return (
