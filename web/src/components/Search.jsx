@@ -22,8 +22,12 @@ export default function Search({ guildId }) {
     const [source, setSource] = useState('youtube');
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [offset, setOffset] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
+    const loadMoreRef = useRef(null);
     
     const sendCommand = usePlayerStore(state => state.sendCommand);
 
@@ -42,30 +46,80 @@ export default function Search({ guildId }) {
     useEffect(() => {
         if (!query.trim()) {
             setResults([]);
+            setOffset(0);
+            setHasMore(true);
             return;
         }
 
         const timer = setTimeout(() => {
-            performSearch();
+            // Reset and search
+            setOffset(0);
+            setHasMore(true);
+            performSearch(true);
         }, 500);
 
         return () => clearTimeout(timer);
     }, [query, source]);
 
-    async function performSearch() {
+    // Intersection Observer for infinite scroll
+    useEffect(() => {
+        if (loading || loadingMore || !hasMore) return;
+
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting) {
+                loadMore();
+            }
+        }, { threshold: 0.1 });
+
+        if (loadMoreRef.current) observer.observe(loadMoreRef.current);
+        return () => observer.disconnect();
+    }, [loading, loadingMore, hasMore, results]);
+
+    async function performSearch(isInitial = false) {
         if (!query.trim()) return;
-        setLoading(true);
+        
+        if (isInitial) setLoading(true);
+        else setLoadingMore(true);
+
         try {
+            const currentOffset = isInitial ? 0 : offset;
             const res = await axios.get('/api/search', {
-                params: { q: query, source }
+                params: { q: query, source, offset: currentOffset, limit: 20 }
             });
-            setResults(res.data.tracks || []);
+            
+            const newTracks = res.data.tracks || [];
+            
+            if (isInitial) {
+                setResults(newTracks);
+                setOffset(20);
+            } else {
+                setResults(prev => [...prev, ...newTracks]);
+                setOffset(prev => prev + 20);
+            }
+
+            // If we got fewer results than requested, it means we reached the end
+            if (newTracks.length < 20) {
+                setHasMore(false);
+            }
+            
+            // For YouTube/SoundCloud, Lavalink doesn't support offset, 
+            // so we stop after 1 page to avoid duplicates unless it's Spotify
+            if (source !== 'spotify' && newTracks.length > 0) {
+                setHasMore(false);
+            }
+
         } catch (err) {
             console.error('Search error:', err);
-            setResults([]);
+            if (isInitial) setResults([]);
         } finally {
             setLoading(false);
+            setLoadingMore(false);
         }
+    }
+
+    async function loadMore() {
+        if (loading || loadingMore || !hasMore) return;
+        performSearch(false);
     }
 
     const handleSubmit = (e) => {
@@ -188,6 +242,22 @@ export default function Search({ guildId }) {
                         </div>
                     </div>
                 ))}
+
+                {/* Infinite Scroll Trigger */}
+                <div ref={loadMoreRef} className="h-4 w-full" />
+
+                {loadingMore && (
+                    <div className="flex items-center justify-center py-4 gap-2 text-textSecondary text-sm font-medium animate-pulse">
+                        <Loader2 className="animate-spin text-primary" size={18} />
+                        Buscando más resultados...
+                    </div>
+                )}
+
+                {!hasMore && results.length > 0 && query && (
+                    <div className="text-center py-8 text-textSecondary text-xs uppercase tracking-widest opacity-40">
+                        Has llegado al final de los resultados
+                    </div>
+                )}
             </div>
         </div>
     );

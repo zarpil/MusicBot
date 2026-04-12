@@ -44,6 +44,9 @@ async function getSpotifyToken() {
 router.get('/', async (req, res) => {
   const q = (req.query.q || '').trim();
   const source = req.query.source || 'youtube';
+  const limit  = parseInt(req.query.limit || '20', 10);
+  const offset = parseInt(req.query.offset || '0', 10);
+
   if (!q) return res.status(400).json({ error: 'q is required' });
 
   const manager = req.app.locals.getManager();
@@ -54,7 +57,7 @@ router.get('/', async (req, res) => {
       if (!token) return res.status(500).json({ error: 'Spotify API not configured' });
 
       const response = await axios.get('https://api.spotify.com/v1/search', {
-        params: { q, type: 'track', limit: 20 },
+        params: { q, type: 'track', limit, offset },
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -129,7 +132,7 @@ router.get('/', async (req, res) => {
     }));
 
     console.log(`[API] Search successful, found ${tracks.length} tracks`);
-    res.json({ loadType: result.loadType, tracks: tracks.slice(0, 20) });
+    res.json({ loadType: result.loadType, tracks: tracks.slice(0, limit) });
   } catch (err) {
     console.error(`[API] Search CRASH for "${req.query.q}":`, err);
     res.status(500).json({ error: 'Error interno al buscar la canción. Inténtalo de nuevo.' });
