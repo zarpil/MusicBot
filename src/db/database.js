@@ -73,6 +73,20 @@ function init() {
     );
   `);
 
+  // ── Database Migrations ───────────────────────────────────────────────────
+  // Ensure playlists table has the new creator columns for existing databases
+  const columns = _db.prepare("PRAGMA table_info(playlists)").all();
+  const hasCreatorId = columns.some(c => c.name === 'creator_id');
+  
+  if (!hasCreatorId) {
+    console.log('[DB] Migrating playlists table...');
+    _db.exec(`
+      ALTER TABLE playlists ADD COLUMN creator_id TEXT;
+      ALTER TABLE playlists ADD COLUMN creator_name TEXT;
+      ALTER TABLE playlists ADD COLUMN creator_avatar TEXT;
+    `);
+  }
+
   console.log('[DB] SQLite database ready at', DB_PATH);
 }
 
