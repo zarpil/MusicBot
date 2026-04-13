@@ -109,4 +109,26 @@ router.delete('/:id/tracks/:trackId', (req, res) => {
     }
 });
 
+// ── PUT /api/playlists/:id/reorder
+router.put('/:id/reorder', (req, res) => {
+    try {
+      const playlist = db.getPlaylist(req.params.id);
+      if (!playlist) return res.status(404).json({ error: 'Playlist not found' });
+  
+      if (playlist.creator_id !== req.user.id) {
+        return res.status(403).json({ error: 'Solo el creador puede editar esta lista' });
+      }
+  
+      const { trackIds } = req.body;
+      if (!trackIds || !Array.isArray(trackIds)) {
+        return res.status(400).json({ error: 'trackIds array is required' });
+      }
+  
+      db.reorderPlaylistTracks(req.params.id, trackIds);
+      res.json({ success: true });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+});
+
 module.exports = router;

@@ -190,6 +190,20 @@ function removeTrackFromPlaylist(trackId) {
   return getDb().prepare('DELETE FROM playlist_tracks WHERE id = ?').run(trackId);
 }
 
+function reorderPlaylistTracks(playlistId, trackIds) {
+  const db = getDb();
+  const update = db.prepare('UPDATE playlist_tracks SET position = ? WHERE id = ? AND playlist_id = ?');
+
+  // Use a transaction for atomic update
+  const transaction = db.transaction((idList) => {
+    for (let i = 0; i < idList.length; i++) {
+      update.run(i, idList[i], playlistId);
+    }
+  });
+
+  transaction(trackIds);
+}
+
 // ── History helpers ───────────────────────────────────────────────────────────
 function addHistoryEntry(guildId, track) {
   return getDb().prepare(`
@@ -260,6 +274,7 @@ module.exports = {
   getPlaylistTracks,
   addTrackToPlaylist,
   removeTrackFromPlaylist,
+  reorderPlaylistTracks,
   addHistoryEntry,
   getHistory,
   getUserFavorites,

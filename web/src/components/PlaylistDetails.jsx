@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { ArrowLeft, Play, Trash2, Music, User, Clock, Loader2, Plus, Search as SearchIcon, X } from 'lucide-react';
+import { ArrowLeft, Play, Trash2, Music, User, Clock, Loader2, Plus, Search as SearchIcon, X, GripVertical } from 'lucide-react';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import usePlayerStore from '../store/usePlayerStore';
 import useAuthStore from '../store/useAuthStore';
 
@@ -10,6 +11,18 @@ function formatTime(ms) {
     const m = Math.floor(totalSeconds / 60);
     const s = totalSeconds % 60;
     return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function formatTotalTime(ms) {
+    if (!ms || isNaN(ms)) return '0 min';
+    const totalMinutes = Math.floor(ms / (1000 * 60));
+    const h = Math.floor(totalMinutes / 60);
+    const m = totalMinutes % 60;
+    
+    if (h > 0) {
+        return `${h} h ${m} min`;
+    }
+    return `${m} min`;
 }
 
 export default function PlaylistDetails({ playlistId, onBack }) {
@@ -104,6 +117,26 @@ export default function PlaylistDetails({ playlistId, onBack }) {
         }
     };
 
+    const handleReorder = async (result) => {
+        if (!result.destination) return;
+        if (result.destination.index === result.source.index) return;
+
+        const newTracks = Array.from(playlist.tracks);
+        const [reorderedTrack] = newTracks.splice(result.source.index, 1);
+        newTracks.splice(result.destination.index, 0, reorderedTrack);
+
+        setPlaylist({ ...playlist, tracks: newTracks });
+
+        try {
+            await axios.put(`/api/playlists/${playlistId}/reorder`, {
+                trackIds: newTracks.map(t => t.id)
+            });
+        } catch (err) {
+            console.error('Failed to reorder tracks:', err);
+            fetchDetails(); // Revert on failure
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center h-full">
@@ -115,6 +148,7 @@ export default function PlaylistDetails({ playlistId, onBack }) {
     if (!playlist) return null;
 
     const isCreator = currentUser && currentUser.id === playlist.creator_id;
+    const totalDuration = playlist.tracks?.reduce((acc, t) => acc + (t.duration || 0), 0) || 0;
 
     return (
         <div className="flex flex-col h-full overflow-hidden">
@@ -148,6 +182,12 @@ export default function PlaylistDetails({ playlistId, onBack }) {
                         </div>
                         <span>•</span>
                         <span>{playlist.tracks?.length || 0} canciones</span>
+                        {playlist.tracks?.length > 0 && (
+                            <>
+                                <span>•</span>
+                                <span>{formatTotalTime(totalDuration)}</span>
+                            </>
+                        )}
                         <span>•</span>
                         <div className="flex items-center gap-4 ml-auto">
                             <button 
@@ -180,62 +220,96 @@ export default function PlaylistDetails({ playlistId, onBack }) {
 
             {/* Tracks List */}
             <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                <table className="w-full border-separate border-spacing-y-2">
-                    <thead>
-                        <tr className="text-left text-[11px] text-textSecondary uppercase tracking-widest">
-                            <th className="px-4 py-2 font-bold w-12">#</th>
-                            <th className="px-4 py-2 font-bold">Título</th>
-                            <th className="px-4 py-2 font-bold hidden md:table-cell">Autor</th>
-                            <th className="px-4 py-2 font-bold w-20 text-right"><Clock size={16} className="inline" /></th>
-                            {isCreator && <th className="px-4 py-2 w-12"></th>}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {playlist.tracks?.map((track, i) => (
-                            <tr
-                                key={track.id}
-                                className="group hover:bg-white/5 transition-colors cursor-pointer"
-                                onClick={() => handlePlayTrack(track)}
+                <DragDropContext onDragEnd={handleReorder}>
+                    <Droppable droppableId="playlist-tracks" isDropDisabled={!isCreator}>
+                        {(provided) => (
+                            <table 
+                                className="w-full border-separate border-spacing-y-2"
+                                {...provided.droppableProps}
+                                ref={provided.innerRef}
                             >
-                                <td className="px-4 py-3 rounded-l-2xl text-textSecondary font-mono text-sm">
-                                    <div className="group-hover:hidden">{i + 1}</div>
-                                    <Play size={14} className="hidden group-hover:block text-primary fill-primary" />
-                                </td>
-                                <td className="px-4 py-3">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-surface rounded flex items-center justify-center shrink-0">
-                                            {track.artwork_url ? (
-                                                <img src={track.artwork_url} className="w-full h-full object-cover rounded" alt="" />
-                                            ) : (
-                                                <Music size={20} className="text-textSecondary opacity-20" />
-                                            )}
-                                        </div>
-                                        <div className="font-semibold text-white truncate">{track.title}</div>
-                                    </div>
-                                </td>
-                                <td className="px-4 py-3 text-textSecondary text-sm hidden md:table-cell truncate">
-                                    {track.author}
-                                </td>
-                                <td className={`px-4 py-3 text-right font-mono text-sm text-textSecondary ${isCreator ? '' : 'rounded-r-2xl'}`}>
-                                    {formatTime(track.duration)}
-                                </td>
-                                {isCreator && (
-                                    <td className="px-4 py-3 text-right rounded-r-2xl">
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleDeleteTrack(track.id);
-                                            }}
-                                            className="opacity-0 group-hover:opacity-100 p-2 hover:text-red-500 transition-all"
+                                <thead>
+                                    <tr className="text-left text-[11px] text-textSecondary uppercase tracking-widest">
+                                        <th className="px-4 py-2 font-bold w-12">#</th>
+                                        {isCreator && <th className="px-4 py-2 w-8"></th>}
+                                        <th className="px-4 py-2 font-bold">Título</th>
+                                        <th className="px-4 py-2 font-bold hidden md:table-cell">Autor</th>
+                                        <th className="px-4 py-2 font-bold w-20 text-right"><Clock size={16} className="inline" /></th>
+                                        {isCreator && <th className="px-4 py-2 w-12"></th>}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {playlist.tracks?.map((track, i) => (
+                                        <Draggable 
+                                            key={track.id.toString()} 
+                                            draggableId={track.id.toString()} 
+                                            index={i}
+                                            isDragDisabled={!isCreator}
                                         >
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </td>
-                                )}
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                                            {(provided, snapshot) => (
+                                                <tr
+                                                    ref={provided.innerRef}
+                                                    {...provided.draggableProps}
+                                                    className={`group transition-colors cursor-pointer ${snapshot.isDragging ? 'bg-white/10 shadow-2xl' : 'hover:bg-white/5'}`}
+                                                    onClick={() => handlePlayTrack(track)}
+                                                >
+                                                    <td className="px-4 py-3 rounded-l-2xl text-textSecondary font-mono text-sm">
+                                                        <div className="group-hover:hidden">{i + 1}</div>
+                                                        <Play size={14} className="hidden group-hover:block text-primary fill-primary" />
+                                                    </td>
+                                                    
+                                                    {isCreator && (
+                                                        <td className="px-4 py-3">
+                                                            <div 
+                                                                {...provided.dragHandleProps}
+                                                                className="text-textSecondary opacity-40 hover:opacity-100 cursor-grab active:cursor-grabbing p-1"
+                                                            >
+                                                                <GripVertical size={16} />
+                                                            </div>
+                                                        </td>
+                                                    )}
+
+                                                    <td className="px-4 py-3">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-10 h-10 bg-surface rounded flex items-center justify-center shrink-0">
+                                                                {track.artwork_url ? (
+                                                                    <img src={track.artwork_url} className="w-full h-full object-cover rounded" alt="" />
+                                                                ) : (
+                                                                    <Music size={20} className="text-textSecondary opacity-20" />
+                                                                )}
+                                                            </div>
+                                                            <div className="font-semibold text-white truncate">{track.title}</div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-textSecondary text-sm hidden md:table-cell truncate">
+                                                        {track.author}
+                                                    </td>
+                                                    <td className={`px-4 py-3 text-right font-mono text-sm text-textSecondary ${isCreator ? '' : 'rounded-r-2xl'}`}>
+                                                        {formatTime(track.duration)}
+                                                    </td>
+                                                    {isCreator && (
+                                                        <td className="px-4 py-3 text-right rounded-r-2xl">
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleDeleteTrack(track.id);
+                                                                }}
+                                                                className="opacity-0 group-hover:opacity-100 p-2 hover:text-red-500 transition-all"
+                                                            >
+                                                                <Trash2 size={16} />
+                                                            </button>
+                                                        </td>
+                                                    )}
+                                                </tr>
+                                            )}
+                                        </Draggable>
+                                    ))}
+                                    {provided.placeholder}
+                                </tbody>
+                            </table>
+                        )}
+                    </Droppable>
+                </DragDropContext>
             </div>
 
             {/* Search Modal (Only for Creator) */}
