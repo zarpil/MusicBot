@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { ArrowLeft, Play, Trash2, Music, User, Clock, Loader2, Plus, Search as SearchIcon, X, GripVertical } from 'lucide-react';
+import { ArrowLeft, Play, Trash2, Music, User, Clock, Loader2, Plus, Search as SearchIcon, X, GripVertical, Heart } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import usePlayerStore from '../store/usePlayerStore';
 import useAuthStore from '../store/useAuthStore';
@@ -32,13 +32,49 @@ export default function PlaylistDetails({ playlistId, onBack }) {
     const [searchResults, setSearchResults] = useState([]);
     const [isSearching, setIsSearching] = useState(false);
     const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+    const [favUris, setFavUris] = useState(new Set());
 
     const sendCommand = usePlayerStore(state => state.sendCommand);
     const currentUser = useAuthStore(state => state.user);
 
     useEffect(() => {
         if (playlistId) fetchDetails();
+        // Fetch favorites on mount
+        axios.get('/api/favorites').then(res => {
+            setFavUris(new Set(res.data.map(f => f.track_uri)));
+        }).catch(() => {});
     }, [playlistId]);
+
+    const handleToggleFavorite = async (e, track) => {
+        e.stopPropagation(); // Don't play the track when clicking heart
+        const uri = track.uri || track.track_uri;
+        const isCurrentlyFav = favUris.has(uri);
+
+        try {
+            if (isCurrentlyFav) {
+                await axios.delete('/api/favorites', { data: { uri } });
+                setFavUris(prev => {
+                    const next = new Set(prev);
+                    next.delete(uri);
+                    return next;
+                });
+            } else {
+                // Formatting for the API (standardizing keys)
+                const trackData = {
+                    uri: uri,
+                    title: track.title,
+                    author: track.author,
+                    duration: track.duration,
+                    artworkUrl: track.artwork_url || track.artworkUrl,
+                    sourceName: track.source_name || track.sourceName
+                };
+                await axios.post('/api/favorites', { track: trackData });
+                setFavUris(prev => new Set(prev).add(uri));
+            }
+        } catch (err) {
+            console.error('Error toggling favorite:', err);
+        }
+    };
 
     // Debounced search for adding new tracks
     useEffect(() => {
@@ -234,6 +270,7 @@ export default function PlaylistDetails({ playlistId, onBack }) {
                                         {isCreator && <th className="px-4 py-2 w-8"></th>}
                                         <th className="px-4 py-2 font-bold">Título</th>
                                         <th className="px-4 py-2 font-bold hidden md:table-cell">Autor</th>
+                                        <th className="px-4 py-2 font-bold w-12 text-center"><Heart size={16} className="inline opacity-40" /></th>
                                         <th className="px-4 py-2 font-bold w-20 text-right"><Clock size={16} className="inline" /></th>
                                         {isCreator && <th className="px-4 py-2 w-12"></th>}
                                     </tr>
@@ -283,6 +320,14 @@ export default function PlaylistDetails({ playlistId, onBack }) {
                                                     </td>
                                                     <td className="px-4 py-3 text-textSecondary text-sm hidden md:table-cell truncate">
                                                         {track.author}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-center">
+                                                        <button 
+                                                            onClick={(e) => handleToggleFavorite(e, track)}
+                                                            className={`p-2 rounded-full transition-colors ${favUris.has(track.uri || track.track_uri) ? 'text-primary' : 'text-textSecondary hover:text-white'}`}
+                                                        >
+                                                            <Heart size={16} fill={favUris.has(track.uri || track.track_uri) ? "currentColor" : "none"} />
+                                                        </button>
                                                     </td>
                                                     <td className={`px-4 py-3 text-right font-mono text-sm text-textSecondary ${isCreator ? '' : 'rounded-r-2xl'}`}>
                                                         {formatTime(track.duration)}
@@ -375,12 +420,21 @@ export default function PlaylistDetails({ playlistId, onBack }) {
                                         <div className="text-sm font-bold text-white truncate">{track.title}</div>
                                         <div className="text-[11px] text-textSecondary/60 truncate uppercase tracking-wider mt-0.5">{track.author}</div>
                                     </div>
-                                    <button 
-                                        onClick={() => handleAddToPlaylist(track)}
-                                        className="px-5 py-2 bg-primary hover:bg-green-400 text-black rounded-full text-xs font-bold transition-all flex items-center gap-2 transform active:scale-95 shadow-lg shadow-primary/10"
-                                    >
-                                        <Plus size={14} /> AÑADIR
-                                    </button>
+                                    <div className="flex items-center gap-2">
+                                        <button 
+                                            onClick={(e) => handleToggleFavorite(e, track)}
+                                            className={`p-2 rounded-full transition-colors ${favUris.has(track.uri) ? 'text-primary bg-primary/10' : 'text-textSecondary hover:text-white hover:bg-white/10'}`}
+                                            title={favUris.has(track.uri) ? "Quitar de favoritos" : "Añadir a favoritos"}
+                                        >
+                                            <Heart size={16} fill={favUris.has(track.uri) ? "currentColor" : "none"} />
+                                        </button>
+                                        <button 
+                                            onClick={() => handleAddToPlaylist(track)}
+                                            className="px-5 py-2 bg-primary hover:bg-green-400 text-black rounded-full text-xs font-bold transition-all flex items-center gap-2 transform active:scale-95 shadow-lg shadow-primary/10"
+                                        >
+                                            <Plus size={14} /> AÑADIR
+                                        </button>
+                                    </div>
                                 </div>
                             ))}
                         </div>
