@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Play, Pause, SkipForward, Volume2, Radio } from 'lucide-react';
+import { Play, Pause, SkipForward, Volume2, Radio, Heart } from 'lucide-react';
+import axios from 'axios';
 import usePlayerStore from '../store/usePlayerStore';
 
 function formatTime(ms) {
@@ -21,12 +22,38 @@ export default function BottomPlayer() {
   const [isDraggingVolume, setIsDraggingVolume] = useState(false);
   const ignoreSyncTimer = useRef(null);
 
+  const [isFav, setIsFav] = useState(false);
+
   // Sync local volume with store when it changes from outside
   useEffect(() => {
     if (!isDraggingVolume && !ignoreSyncTimer.current) {
       setLocalVolume(volume);
     }
   }, [volume, isDraggingVolume]);
+
+  // Check if current track is favorite
+  useEffect(() => {
+    if (current?.uri) {
+      axios.get(`/api/favorites/check?uri=${encodeURIComponent(current.uri)}`)
+        .then(res => setIsFav(res.data.isFavorite))
+        .catch(() => setIsFav(false));
+    }
+  }, [current?.uri]);
+
+  const toggleFavorite = async () => {
+    if (!current) return;
+    try {
+      if (isFav) {
+        await axios.delete('/api/favorites', { data: { uri: current.uri } });
+        setIsFav(false);
+      } else {
+        await axios.post('/api/favorites', { track: current });
+        setIsFav(true);
+      }
+    } catch (err) {
+      console.error('Error toggling favorite:', err);
+    }
+  };
 
   const handleVolumeChange = (e) => {
     const val = parseInt(e.target.value);
@@ -92,7 +119,16 @@ export default function BottomPlayer() {
           <div className="w-12 h-12 md:w-14 md:h-14 bg-surface rounded flex items-center justify-center shadow-md">🎵</div>
         )}
         <div className="overflow-hidden flex-1">
-          <div className="truncate font-semibold hover:underline cursor-pointer" title={current.title}>{current.title}</div>
+          <div className="flex items-center gap-2">
+            <div className="truncate font-semibold hover:underline cursor-pointer" title={current.title}>{current.title}</div>
+            <button 
+                onClick={toggleFavorite}
+                className={`shrink-0 transition-colors ${isFav ? 'text-primary' : 'text-textSecondary hover:text-white'}`}
+                title={isFav ? "Quitar de favoritos" : "Añadir a favoritos"}
+            >
+                <Heart size={16} fill={isFav ? "currentColor" : "none"} />
+            </button>
+          </div>
           <div className="flex items-center gap-2">
              <div className="text-xs text-textSecondary truncate">{current.author}</div>
              {current.requester && (

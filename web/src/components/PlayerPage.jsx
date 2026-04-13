@@ -10,6 +10,7 @@ import Queue from './Queue';
 import History from './History';
 import PlaylistsView from './PlaylistsView';
 import PlaylistDetails from './PlaylistDetails';
+import FavoritesView from './FavoritesView';
 
 export default function PlayerPage() {
   const { guildId } = useParams();
@@ -54,6 +55,8 @@ export default function PlayerPage() {
                   </div>
                 ) : view === 'history' ? (
                   <History guildId={guildId} />
+                ) : view === 'favorites' ? (
+                  <FavoritesView />
                 ) : view === 'playlists' ? (
                   <PlaylistsView 
                     guildId={guildId} 

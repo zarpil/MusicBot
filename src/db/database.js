@@ -71,6 +71,19 @@ function init() {
       played_at       DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (guild_id) REFERENCES guilds(id) ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS user_favorites (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id     TEXT NOT NULL,
+      track_uri   TEXT NOT NULL,
+      title       TEXT NOT NULL,
+      author      TEXT,
+      duration    INTEGER DEFAULT 0,
+      artwork_url TEXT,
+      source_name TEXT,
+      created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(user_id, track_uri)
+    );
   `);
 
   // ── Database Migrations ───────────────────────────────────────────────────
@@ -195,6 +208,38 @@ function addHistoryEntry(guildId, track) {
   );
 }
 
+// ── Favorites helpers ────────────────────────────────────────────────────────
+function getUserFavorites(userId) {
+  return getDb().prepare(`
+    SELECT * FROM user_favorites WHERE user_id = ? ORDER BY created_at DESC
+  `).all(userId);
+}
+
+function addFavorite(userId, track) {
+  return getDb().prepare(`
+    INSERT INTO user_favorites (user_id, track_uri, title, author, duration, artwork_url, source_name)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(user_id, track_uri) DO NOTHING
+  `).run(
+    userId,
+    track.uri || track.track_uri,
+    track.title,
+    track.author || '',
+    track.duration || 0,
+    track.artworkUrl || track.artwork_url || null,
+    track.sourceName || track.source_name || 'youtube'
+  );
+}
+
+function removeFavorite(userId, trackUri) {
+  return getDb().prepare('DELETE FROM user_favorites WHERE user_id = ? AND track_uri = ?').run(userId, trackUri);
+}
+
+function isFavorite(userId, trackUri) {
+  const row = getDb().prepare('SELECT id FROM user_favorites WHERE user_id = ? AND track_uri = ?').get(userId, trackUri);
+  return !!row;
+}
+
 function getHistory(guildId, limit = 50) {
   return getDb().prepare(`
     SELECT * FROM history WHERE guild_id = ? ORDER BY played_at DESC LIMIT ?
@@ -217,4 +262,8 @@ module.exports = {
   removeTrackFromPlaylist,
   addHistoryEntry,
   getHistory,
+  getUserFavorites,
+  addFavorite,
+  removeFavorite,
+  isFavorite,
 };

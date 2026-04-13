@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
-import { Search as SearchIcon, Plus, Loader2, Play, Music, Cloud, ChevronDown } from 'lucide-react';
+import { Search as SearchIcon, Plus, Loader2, Play, Music, Cloud, ChevronDown, Heart } from 'lucide-react';
 import usePlayerStore from '../store/usePlayerStore';
 
 function formatTime(ms) {
@@ -28,8 +28,38 @@ export default function Search({ guildId }) {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
     const loadMoreRef = useRef(null);
+    const [favUris, setFavUris] = useState(new Set());
     
     const sendCommand = usePlayerStore(state => state.sendCommand);
+
+    // Load initial favorites to show correct state
+    useEffect(() => {
+        axios.get('/api/favorites').then(res => {
+            setFavUris(new Set(res.data.map(f => f.track_uri)));
+        }).catch(() => {});
+    }, []);
+
+    async function handleToggleFavorite(e, track) {
+        e.stopPropagation();
+        const uri = track.uri;
+        const isCurrentlyFav = favUris.has(uri);
+
+        try {
+            if (isCurrentlyFav) {
+                await axios.delete('/api/favorites', { data: { uri } });
+                setFavUris(prev => {
+                    const next = new Set(prev);
+                    next.delete(uri);
+                    return next;
+                });
+            } else {
+                await axios.post('/api/favorites', { track });
+                setFavUris(prev => new Set(prev).add(uri));
+            }
+        } catch (err) {
+            console.error('Error toggling favorite:', err);
+        }
+    }
 
     // Close dropdown on click outside
     useEffect(() => {
@@ -237,8 +267,16 @@ export default function Search({ guildId }) {
                             <p className="text-textSecondary text-xs mt-0.5 truncate uppercase tracking-wider">{track.author}</p>
                         </div>
 
-                        <div className="text-sm font-mono text-textSecondary/50 group-hover:text-textSecondary transition-colors hidden sm:block">
-                            {formatTime(track.duration)}
+                        <div className="flex items-center gap-4">
+                            <div className="text-sm font-mono text-textSecondary/50 group-hover:text-textSecondary transition-colors hidden sm:block">
+                                {formatTime(track.duration)}
+                            </div>
+                            <button 
+                                onClick={(e) => handleToggleFavorite(e, track)}
+                                className={`p-2 rounded-full transition-colors ${favUris.has(track.uri) ? 'text-primary bg-primary/10' : 'text-textSecondary hover:text-white hover:bg-white/10'}`}
+                            >
+                                <Heart size={18} fill={favUris.has(track.uri) ? "currentColor" : "none"} />
+                            </button>
                         </div>
                     </div>
                 ))}

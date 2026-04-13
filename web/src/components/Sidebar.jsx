@@ -1,4 +1,4 @@
-import { Home, Search as SearchIcon, Library, ArrowLeft, History } from 'lucide-react';
+import { Home, Search as SearchIcon, Library, ArrowLeft, History, Heart } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 
 export default function Sidebar({ guildId, activeView, setView }) {
@@ -26,6 +26,14 @@ export default function Sidebar({ guildId, activeView, setView }) {
             className={`flex items-center gap-4 font-bold transition cursor-pointer ${activeView === 'player' ? 'text-primary' : 'text-textSecondary hover:text-white'}`}
           >
             <SearchIcon size={24} /> Reproductor
+          </div>
+        </li>
+        <li>
+          <div 
+            onClick={() => setView('favorites')}
+            className={`flex items-center gap-4 font-bold transition cursor-pointer ${activeView === 'favorites' ? 'text-primary' : 'text-textSecondary hover:text-white'}`}
+          >
+            <Heart size={24} /> Mis Favoritos
           </div>
         </li>
         <li>

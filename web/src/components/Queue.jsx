@@ -1,7 +1,7 @@
 import usePlayerStore from '../store/usePlayerStore';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
-import { X, GripVertical, Play, Library } from 'lucide-react';
+import { X, GripVertical, Play, Library, Heart } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 function formatTime(ms) {
@@ -16,6 +16,34 @@ export default function Queue() {
   const { guildId } = useParams();
   const { queue } = usePlayerStore(state => state.state);
   const { removeTrack, moveTrack, jumpToTrack, clearQueue } = usePlayerStore();
+  const [favUris, setFavUris] = useState(new Set());
+
+  useEffect(() => {
+    axios.get('/api/favorites').then(res => {
+      setFavUris(new Set(res.data.map(f => f.track_uri)));
+    }).catch(() => {});
+  }, []);
+
+  const handleToggleFavorite = async (track) => {
+    const uri = track.uri;
+    const isCurrentlyFav = favUris.has(uri);
+
+    try {
+      if (isCurrentlyFav) {
+        await axios.delete('/api/favorites', { data: { uri } });
+        setFavUris(prev => {
+          const next = new Set(prev);
+          next.delete(uri);
+          return next;
+        });
+      } else {
+        await axios.post('/api/favorites', { track });
+        setFavUris(prev => new Set(prev).add(uri));
+      }
+    } catch (err) {
+      console.error('Error toggling favorite:', err);
+    }
+  };
 
   const handleSavePlaylist = async () => {
     if (queue.length === 0) return;
@@ -135,6 +163,13 @@ export default function Queue() {
                           <div className="text-[11px] text-textSecondary font-mono hidden sm:block">
                             {track.isStream ? 'EN DIRECTO' : formatTime(track.duration)}
                           </div>
+                          <button
+                            onClick={() => handleToggleFavorite(track)}
+                            className={`p-1.5 rounded-lg transition-all ${favUris.has(track.uri) ? 'text-primary bg-primary/10' : 'text-textSecondary hover:text-white hover:bg-white/10'}`}
+                            title={favUris.has(track.uri) ? "Quitar de favoritos" : "Añadir a favoritos"}
+                          >
+                            <Heart size={16} fill={favUris.has(track.uri) ? "currentColor" : "none"} />
+                          </button>
                           <button
                             className="p-1.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 text-textSecondary hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
                             onClick={() => removeTrack(i)}

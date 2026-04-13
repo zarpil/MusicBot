@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { History as HistoryIcon, Clock, User, Play, Loader2 } from 'lucide-react';
+import { History as HistoryIcon, Clock, User, Play, Loader2, Heart } from 'lucide-react';
 import usePlayerStore from '../store/usePlayerStore';
 
 function formatTime(ms) {
@@ -27,11 +27,46 @@ function timeAgo(dateString) {
 export default function History({ guildId }) {
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [favUris, setFavUris] = useState(new Set());
     const sendCommand = usePlayerStore(state => state.sendCommand);
 
     useEffect(() => {
         fetchHistory();
+        // Load favorites to show correct heart state
+        axios.get('/api/favorites').then(res => {
+            setFavUris(new Set(res.data.map(f => f.track_uri)));
+        }).catch(() => {});
     }, [guildId]);
+
+    const handleToggleFavorite = async (track) => {
+        const uri = track.uri;
+        const isCurrentlyFav = favUris.has(uri);
+
+        try {
+            if (isCurrentlyFav) {
+                await axios.delete('/api/favorites', { data: { uri } });
+                setFavUris(prev => {
+                    const next = new Set(prev);
+                    next.delete(uri);
+                    return next;
+                });
+            } else {
+                await axios.post('/api/favorites', { 
+                    track: {
+                        uri: track.uri,
+                        title: track.title,
+                        author: track.author,
+                        duration: track.duration,
+                        artworkUrl: track.artwork_url,
+                        sourceName: track.source_name
+                    }
+                });
+                setFavUris(prev => new Set(prev).add(uri));
+            }
+        } catch (err) {
+            console.error('Error toggling favorite:', err);
+        }
+    };
 
     async function fetchHistory() {
         setLoading(true);
@@ -114,7 +149,14 @@ export default function History({ guildId }) {
                                 </div>
                             </div>
 
-                            <div className="flex flex-col items-end gap-1.5 shrink-0">
+                            <div className="flex items-center gap-2">
+                                <button 
+                                    onClick={() => handleToggleFavorite(item)}
+                                    className={`p-2 rounded-full transition-colors ${favUris.has(item.uri) ? 'text-primary bg-primary/10' : 'text-textSecondary hover:text-white hover:bg-white/10'}`}
+                                >
+                                    <Heart size={16} fill={favUris.has(item.uri) ? "currentColor" : "none"} />
+                                </button>
+                                <div className="flex flex-col items-end gap-1.5 shrink-0">
                                 {item.requester_name && (
                                     <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white/5 rounded-full border border-white/5">
                                         {item.requester_avatar ? (
@@ -131,7 +173,8 @@ export default function History({ guildId }) {
                                 </div>
                             </div>
                         </div>
-                    ))}
+                    </div>
+                ))}
                 </div>
             )}
         </div>
