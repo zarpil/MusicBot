@@ -3,17 +3,44 @@
 const { Router } = require('express');
 const router = Router();
 
+// ── 5-minute membership cache: userId -> { guilds: [], fetchedAt: timestamp }
+const membershipCache = new Map();
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
 // ── GET /api/guilds
-// Returns all guilds the bot is in
-router.get('/', (req, res) => {
+// Returns only guilds where BOTH the bot AND the authenticated user are members.
+router.get('/', async (req, res) => {
   const client = req.app.locals.discord;
-  const guilds = client.guilds.cache.map(g => ({
-    id:   g.id,
-    name: g.name,
-    icon: g.iconURL({ size: 64, extension: 'webp' }),
-    memberCount: g.memberCount,
-  }));
-  res.json(guilds);
+  const userId = req.user.id;
+
+  // Check cache first
+  const cached = membershipCache.get(userId);
+  if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) {
+    return res.json(cached.guilds);
+  }
+
+  // Build filtered list by checking membership in each guild
+  const userGuilds = [];
+  for (const guild of client.guilds.cache.values()) {
+    try {
+      const member = await guild.members.fetch(userId).catch(() => null);
+      if (member) {
+        userGuilds.push({
+          id:          guild.id,
+          name:        guild.name,
+          icon:        guild.iconURL({ size: 64, extension: 'webp' }),
+          memberCount: guild.memberCount,
+        });
+      }
+    } catch {
+      // Skip guilds where we can't check membership
+    }
+  }
+
+  // Store in cache
+  membershipCache.set(userId, { guilds: userGuilds, fetchedAt: Date.now() });
+
+  res.json(userGuilds);
 });
 
 // ── GET /api/guilds/:id/player

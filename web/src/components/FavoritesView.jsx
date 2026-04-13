@@ -6,7 +6,7 @@ import usePlayerStore from '../store/usePlayerStore';
 export default function FavoritesView() {
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
-  const enqueue = usePlayerStore(state => state.enqueue);
+  const sendCommand = usePlayerStore(state => state.sendCommand);
 
   useEffect(() => {
     fetchFavorites();
@@ -34,15 +34,23 @@ export default function FavoritesView() {
   };
 
   const playFavorite = (track) => {
-    const trackToEnqueue = {
-      title: track.title,
-      author: track.author,
-      uri: track.track_uri,
-      duration: track.duration,
-      artworkUrl: track.artwork_url,
-      sourceName: track.source_name
-    };
-    enqueue(trackToEnqueue);
+    sendCommand('ENQUEUE', {
+      track: {
+        title:      track.title,
+        author:     track.author,
+        uri:        track.track_uri,
+        duration:   track.duration,
+        artworkUrl: track.artwork_url,
+        sourceName: track.source_name,
+      }
+    });
+  };
+
+  const playAll = () => {
+    // Enqueue one by one with a small delay so the server doesn't get overwhelmed
+    favorites.forEach((track, i) => {
+      setTimeout(() => playFavorite(track), i * 150);
+    });
   };
 
   const formatDuration = (ms) => {
@@ -73,7 +81,7 @@ export default function FavoritesView() {
         
         {favorites.length > 0 && (
             <button 
-                onClick={() => favorites.forEach(f => playFavorite(f))}
+                onClick={playAll}
                 className="bg-primary text-black font-bold px-6 py-3 rounded-full flex items-center gap-2 hover:scale-105 transition active:scale-95"
             >
                 <Play size={20} fill="black" /> Reproducir Todo
