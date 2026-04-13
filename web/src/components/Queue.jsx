@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import usePlayerStore from '../store/usePlayerStore';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
