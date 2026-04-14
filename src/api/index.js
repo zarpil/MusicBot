@@ -29,7 +29,8 @@ async function initApi(discordClient) {
     origin: (process.env.CORS_ORIGINS || 'http://localhost:5173').split(','),
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   }));
-  app.use(express.json());
+  app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
   // Attach Discord client + Lavalink manager so routes can access them
   app.locals.discord = discordClient;
