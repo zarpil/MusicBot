@@ -3,6 +3,11 @@
 @tailwind utilities;
 
 @layer base {
+  *, ::before, ::after {
+    box-sizing: border-box;
+    border: 0 solid #e5e7eb;
+    border-radius: 0.71rem;
+  }
   body {
     @apply bg-background text-textPrimary antialiased selection:bg-primary selection:text-black;
   }

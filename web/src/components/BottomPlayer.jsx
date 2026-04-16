@@ -20,7 +20,7 @@ export default function BottomPlayer() {
   const [showLyrics, setShowLyrics] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [dragValue, setDragValue] = useState(0);
-  
+
   const [localVolume, setLocalVolume] = useState(volume);
   const [isDraggingVolume, setIsDraggingVolume] = useState(false);
   const ignoreSyncTimer = useRef(null);
@@ -62,11 +62,11 @@ export default function BottomPlayer() {
   const handleVolumeChange = (e) => {
     const val = parseInt(e.target.value);
     setLocalVolume(val);
-    
+
     // Clear existing sync/debounce timers
     if (ignoreSyncTimer.current) clearTimeout(ignoreSyncTimer.current);
     if (volumeDebounceTimer.current) clearTimeout(volumeDebounceTimer.current);
-    
+
     // Lock sync to prevent snap-back
     ignoreSyncTimer.current = setTimeout(() => {
       ignoreSyncTimer.current = null;
@@ -125,26 +125,26 @@ export default function BottomPlayer() {
         <div className="overflow-hidden flex-1">
           <div className="flex items-center gap-2">
             <div className="truncate font-semibold hover:underline cursor-pointer" title={current.title}>{current.title}</div>
-            <button 
-                onClick={toggleFavorite}
-                className={`shrink-0 transition-colors ${isFav ? 'text-primary' : 'text-textSecondary hover:text-white'}`}
-                title={isFav ? "Quitar de favoritos" : "Añadir a favoritos"}
+            <button
+              onClick={toggleFavorite}
+              className={`shrink-0 transition-colors ${isFav ? 'text-primary' : 'text-textSecondary hover:text-white'}`}
+              title={isFav ? "Quitar de favoritos" : "Añadir a favoritos"}
             >
-                <Heart size={16} fill={isFav ? "currentColor" : "none"} />
+              <Heart size={16} fill={isFav ? "currentColor" : "none"} />
             </button>
           </div>
           <div className="flex items-center gap-2">
-             <div className="text-xs text-textSecondary truncate">{current.author}</div>
-             {current.requester && (
-               <div className="flex items-center gap-1 text-[10px] text-primary font-medium bg-primary/5 px-2 py-0.5 rounded-full border border-primary/10">
-                 {current.requester.avatar ? (
-                   <img src={current.requester.avatar} className="w-3 h-3 rounded-full object-cover" alt="" />
-                 ) : (
-                   <div className="w-3 h-3 bg-primary/20 rounded-full flex items-center justify-center text-[6px]">👤</div>
-                 )}
-                 <span className="truncate max-w-[80px]">{current.requester.username}</span>
-               </div>
-             )}
+            <div className="text-xs text-textSecondary truncate">{current.author}</div>
+            {current.requester && (
+              <div className="flex items-center gap-1 text-[10px] text-primary font-medium bg-primary/5 px-2 py-0.5 rounded-full border border-primary/10">
+                {current.requester.avatar ? (
+                  <img src={current.requester.avatar} className="w-3 h-3 rounded-full object-cover" alt="" />
+                ) : (
+                  <div className="w-3 h-3 bg-primary/20 rounded-full flex items-center justify-center text-[6px]">👤</div>
+                )}
+                <span className="truncate max-w-[80px]">{current.requester.username}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -152,15 +152,15 @@ export default function BottomPlayer() {
       {/* Middle: Controls */}
       <div className="flex flex-col items-center justify-center w-full md:max-w-[40%] flex-1 gap-2">
         <div className="flex items-center gap-6">
-          <button 
-            onClick={toggleAutoplay} 
+          <button
+            onClick={toggleAutoplay}
             className={`transition ${autoplay ? 'text-primary' : 'text-textSecondary hover:text-white'}`}
-            title="Modo Radio (Autoplay)"
+            title="Autoplay"
           >
             <Radio size={18} />
           </button>
 
-          <button 
+          <button
             onClick={paused ? play : pause}
             className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 transition shadow-md"
           >
@@ -176,113 +176,112 @@ export default function BottomPlayer() {
         <div className="w-full flex items-center gap-2 text-xs text-textSecondary font-mono group">
           <span className="w-10 text-right">{formatTime(currentPosition)}</span>
           <div className="flex-1 relative flex items-center h-4">
-             {/* Visual Background */}
-             <div className="absolute w-full h-1 bg-surfaceHighlight rounded-full shadow-inner"></div>
-              {/* Visual Progress */}
-              <div 
-                className="absolute h-1 bg-primary rounded-full group-hover:bg-pink-400 transition-colors pointer-events-none"
-                style={{ width: `${Math.min(progressPercent, 100)}%` }}
-              />
-              {/* Hidden Real Input for Interaction */}
-              <input 
-                type="range"
-                min="0"
-                max={current.duration || 100}
-                value={currentPosition}
-                onMouseDown={handleSeekStart}
-                onInput={handleSeekChange}
-                onMouseUp={handleSeekEnd}
-                onTouchStart={handleSeekStart}
-                onTouchEnd={handleSeekEnd}
-                className="absolute w-full h-4 opacity-0 cursor-pointer accent-primary"
-                disabled={current.isStream}
-              />
-           </div>
-           <span className="w-10">{current.isStream ? 'LIVE' : formatTime(current.duration)}</span>
-         </div>
-       </div>
- 
-        {/* Right: Volume & Extra Controls */}
-        <div className="hidden md:flex w-[30%] min-w-[200px] justify-end items-center gap-4 text-textSecondary pr-6 relative">
-          <button 
-            onClick={() => setShowFilters(!showFilters)} 
-            className={`transition ${showFilters || Object.values(filters || {}).some(v => v) ? 'text-primary' : 'hover:text-white'}`}
-            title="Efectos de Audio"
-          >
-            <Sparkles size={18} />
-          </button>
-
-          <button 
-            onClick={() => setShowLyrics(true)} 
-            className="transition hover:text-white"
-            title="Letras (Sincronizadas)"
-          >
-            <Mic2 size={18} />
-          </button>
-
-          <div className="flex items-center gap-2 flex-1 max-w-[150px]">
-            <Volume2 size={20} />
-            <div className="flex-1 group relative flex items-center h-4">
-                <div className="absolute w-full h-1 bg-surfaceHighlight rounded-full shadow-inner"></div>
-                <div 
-                    className="absolute h-1 bg-primary rounded-full group-hover:bg-pink-400 transition-colors pointer-events-none"
-                    style={{ width: `${localVolume}%` }}
-                />
-                <input 
-                  type="range" 
-                  min="0" max="100" 
-                  value={localVolume}
-                  onMouseDown={() => setIsDraggingVolume(true)}
-                  onMouseUp={() => setIsDraggingVolume(false)}
-                  onTouchStart={() => setIsDraggingVolume(true)}
-                  onTouchEnd={() => setIsDraggingVolume(false)}
-                  onChange={handleVolumeChange}
-                  className="absolute w-full h-4 opacity-0 cursor-pointer accent-primary"
-                />
-            </div>
+            {/* Visual Background */}
+            <div className="absolute w-full h-1 bg-surfaceHighlight rounded-full shadow-inner"></div>
+            {/* Visual Progress */}
+            <div
+              className="absolute h-1 bg-primary rounded-full group-hover:bg-pink-400 transition-colors pointer-events-none"
+              style={{ width: `${Math.min(progressPercent, 100)}%` }}
+            />
+            {/* Hidden Real Input for Interaction */}
+            <input
+              type="range"
+              min="0"
+              max={current.duration || 100}
+              value={currentPosition}
+              onMouseDown={handleSeekStart}
+              onInput={handleSeekChange}
+              onMouseUp={handleSeekEnd}
+              onTouchStart={handleSeekStart}
+              onTouchEnd={handleSeekEnd}
+              className="absolute w-full h-4 opacity-0 cursor-pointer accent-primary"
+              disabled={current.isStream}
+            />
           </div>
+          <span className="w-10">{current.isStream ? 'LIVE' : formatTime(current.duration)}</span>
+        </div>
+      </div>
 
-          {/* Filters Menu Overlay (Positioned above the button) */}
-          {showFilters && (
-              <div className="absolute bottom-16 right-0 bg-surfaceHighlight/95 backdrop-blur-xl border border-white/10 p-4 rounded-2xl shadow-2xl w-60 z-[100] animate-in fade-in slide-in-from-bottom-4 duration-200">
-                  <div className="flex items-center justify-between mb-4">
-                      <h4 className="text-white font-bold flex items-center gap-2">
-                          <Sparkles size={16} className="text-primary" /> Efectos
-                      </h4>
-                      <button onClick={() => setShowFilters(false)} className="text-textSecondary hover:text-white">
-                          <X size={16} />
-                      </button>
-                  </div>
-                  <div className="grid gap-2">
-                      {[
-                          { id: 'bassboost', label: 'Bass Boost', desc: 'Potencia los bajos' },
-                          { id: 'nightcore', label: 'Nightcore', desc: 'Velocidad y agudos' },
-                          { id: 'vaporwave', label: 'Vaporwave', desc: 'Lento y relajado' },
-                          { id: '8d', label: '8D Audio', desc: 'Sonido envolvente' }
-                      ].map(f => (
-                          <button
-                              key={f.id}
-                              onClick={() => toggleFilter(f.id)}
-                              className={`flex flex-col items-start p-3 rounded-xl transition-all border ${
-                                  filters?.[f.id] 
-                                  ? 'bg-primary/20 border-primary/40 text-white' 
-                                  : 'bg-white/5 border-transparent text-textSecondary hover:bg-white/10 hover:text-white'
-                              }`}
-                          >
-                              <span className="text-sm font-semibold">{f.label}</span>
-                              <span className="text-[10px] opacity-60">{f.desc}</span>
-                          </button>
-                      ))}
-                  </div>
-              </div>
-          )}
+      {/* Right: Volume & Extra Controls */}
+      <div className="hidden md:flex w-[30%] min-w-[200px] justify-end items-center gap-4 text-textSecondary pr-6 relative">
+        <button
+          onClick={() => setShowFilters(!showFilters)}
+          className={`transition ${showFilters || Object.values(filters || {}).some(v => v) ? 'text-primary' : 'hover:text-white'}`}
+          title="Efectos de Audio"
+        >
+          <Sparkles size={18} />
+        </button>
+
+        <button
+          onClick={() => setShowLyrics(true)}
+          className="transition hover:text-white"
+          title="Letras (Sincronizadas)"
+        >
+          <Mic2 size={18} />
+        </button>
+
+        <div className="flex items-center gap-2 flex-1 max-w-[150px]">
+          <Volume2 size={20} />
+          <div className="flex-1 group relative flex items-center h-4">
+            <div className="absolute w-full h-1 bg-surfaceHighlight rounded-full shadow-inner"></div>
+            <div
+              className="absolute h-1 bg-primary rounded-full group-hover:bg-pink-400 transition-colors pointer-events-none"
+              style={{ width: `${localVolume}%` }}
+            />
+            <input
+              type="range"
+              min="0" max="100"
+              value={localVolume}
+              onMouseDown={() => setIsDraggingVolume(true)}
+              onMouseUp={() => setIsDraggingVolume(false)}
+              onTouchStart={() => setIsDraggingVolume(true)}
+              onTouchEnd={() => setIsDraggingVolume(false)}
+              onChange={handleVolumeChange}
+              className="absolute w-full h-4 opacity-0 cursor-pointer accent-primary"
+            />
+          </div>
         </div>
 
-        {/* Lyrics Full-screen Overlay */}
-        <LyricsOverlay 
-          isOpen={showLyrics} 
-          onClose={() => setShowLyrics(false)} 
-        />
-     </div>
+        {/* Filters Menu Overlay (Positioned above the button) */}
+        {showFilters && (
+          <div className="absolute bottom-16 right-0 bg-surfaceHighlight/95 backdrop-blur-xl border border-white/10 p-4 rounded-2xl shadow-2xl w-60 z-[100] animate-in fade-in slide-in-from-bottom-4 duration-200">
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="text-white font-bold flex items-center gap-2">
+                <Sparkles size={16} className="text-primary" /> Efectos
+              </h4>
+              <button onClick={() => setShowFilters(false)} className="text-textSecondary hover:text-white">
+                <X size={16} />
+              </button>
+            </div>
+            <div className="grid gap-2">
+              {[
+                { id: 'bassboost', label: 'Bass Boost', desc: 'Potencia los bajos' },
+                { id: 'nightcore', label: 'Nightcore', desc: 'Velocidad y agudos' },
+                { id: 'vaporwave', label: 'Vaporwave', desc: 'Lento y relajado' },
+                { id: '8d', label: '8D Audio', desc: 'Sonido envolvente' }
+              ].map(f => (
+                <button
+                  key={f.id}
+                  onClick={() => toggleFilter(f.id)}
+                  className={`flex flex-col items-start p-3 rounded-xl transition-all border ${filters?.[f.id]
+                      ? 'bg-primary/20 border-primary/40 text-white'
+                      : 'bg-white/5 border-transparent text-textSecondary hover:bg-white/10 hover:text-white'
+                    }`}
+                >
+                  <span className="text-sm font-semibold">{f.label}</span>
+                  <span className="text-[10px] opacity-60">{f.desc}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Lyrics Full-screen Overlay */}
+      <LyricsOverlay
+        isOpen={showLyrics}
+        onClose={() => setShowLyrics(false)}
+      />
+    </div>
   );
 }
