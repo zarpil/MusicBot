@@ -75,10 +75,11 @@ export default function Search({ guildId }) {
 
     // Debounced real-time search
     useEffect(() => {
-        if (!query.trim()) {
+        if (!query.trim() || query.trim().length < 2) {
             setResults([]);
             setOffset(0);
             setHasMore(true);
+            setError(null);
             return;
         }
 
@@ -86,8 +87,9 @@ export default function Search({ guildId }) {
             // Reset and search
             setOffset(0);
             setHasMore(true);
+            setError(null);
             performSearch(true);
-        }, 500);
+        }, 600);
 
         return () => clearTimeout(timer);
     }, [query, source]);
@@ -135,16 +137,23 @@ export default function Search({ guildId }) {
             setHasMore(false);
         }
             
-            // For YouTube/SoundCloud, Lavalink doesn't support offset, 
-            // so we stop after 1 page to avoid duplicates unless it's Spotify
-            if (source !== 'spotify' && newTracks.length > 0) {
-                setHasMore(false);
-            }
+        // For YouTube/SoundCloud, Lavalink doesn't support offset, so stop after 1 page.
+        // For Spotify (Dev Mode): limit is 10 max, disable pagination to avoid rate limits.
+        if (source !== 'spotify' && newTracks.length > 0) {
+            setHasMore(false);
+        }
+        if (source === 'spotify') {
+            setHasMore(false); // Dev Mode: only 10 results, no pagination needed
+        }
 
         } catch (err) {
             console.error('Search error:', err);
-            setError('Error al buscar resultados. Revisa la configuración de la API.');
             setHasMore(false); // Stop infinite loop on error
+            if (err.response?.status === 429) {
+                setError('Demasiadas búsquedas seguidas. Espera unos segundos e inténtalo de nuevo.');
+            } else {
+                setError('Error al buscar en Spotify. Revisa la configuración de la API.');
+            }
             if (isInitial) setResults([]);
         } finally {
             setLoading(false);
