@@ -157,14 +157,6 @@ export default function BottomPlayer() {
           >
             <Radio size={18} />
           </button>
-          
-          <button 
-            onClick={toggleAutoplay} 
-            className={`transition ${autoplay ? 'text-primary' : 'text-textSecondary hover:text-white'}`}
-            title="Modo Radio (Autoplay)"
-          >
-            <Radio size={18} />
-          </button>
 
           <button 
             onClick={paused ? play : pause}
