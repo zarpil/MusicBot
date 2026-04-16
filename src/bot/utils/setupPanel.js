@@ -10,7 +10,8 @@ const db = require('../../db/database');
 function getSetupEmbed(player) {
     const embed = new EmbedBuilder()
         .setTitle('🎵 REPRODUCTOR DE MÚSICA')
-        .setColor(player?.playing ? 0x2f3136 : 0x2b2d31);
+        .setColor(player?.playing ? 0x2f3136 : 0x2b2d31)
+        .setImage('https://i.imgur.com/JughdYl.jpeg');
 
     if (player && player.queue.current) {
         const track = player.queue.current;
@@ -31,10 +32,9 @@ function getSetupEmbed(player) {
 
         const status = player.paused ? '⏸️ PAUSADO' : '▶️ SONANDO';
         const autoplay = player.get('autoplay') ? '✅ ON' : '❌ OFF';
-        embed.setFooter({ text: `Estado: ${status} | Volumen: ${player.volume}% | Autoplay: ${autoplay}` });
+        embed.setFooter({ text: `Estado: ${status} | Volumen: ${player.volume}% | Autoplay: ${autoplay} | Tussi Music | By @p0u` });
     } else {
         embed.setDescription('No hay nada sonando ahora mismo.\n\nEscribe el **nombre de una canción** o una **URL** aquí abajo para empezar a reproducir.')
-            .setImage('https://i.imgur.com/JughdYl.jpeg') // A placeholder professional music banner
             .setFooter({ text: 'Tussi Music | By @p0u' });
     }
 

@@ -5,7 +5,7 @@ const { Events } = require('discord.js');
 module.exports = {
   name: Events.InteractionCreate,
   async execute(interaction, client) {
-    if (!interaction.isChatInputCommand() && !interaction.isAutocomplete()) return;
+    if (!interaction.isChatInputCommand() && !interaction.isAutocomplete() && !interaction.isButton()) return;
 
     const command = client.commands.get(interaction.commandName);
     if (!command) return;
