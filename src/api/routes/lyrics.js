@@ -93,6 +93,11 @@ async function getLyricsFromLRCLIB(artist, title, durationMs) {
     let cleanArtist = cleanName(artist);
     let cleanTitle = cleanName(title);
     
+    const axiosConfig = {
+        headers: { 'User-Agent': 'TussiMusicBot/2.0 (HighPrecisionHunter)' },
+        timeout: 4000
+    };
+
     // Strategy: Remove redundant artist name from title
     if (cleanTitle.toLowerCase().includes(cleanArtist.toLowerCase())) {
         const regex = new RegExp(cleanArtist.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'gi');
@@ -103,11 +108,15 @@ async function getLyricsFromLRCLIB(artist, title, durationMs) {
     
     // Strategy 1: Strict Get (Sequential because it's fast and highly precise)
     try {
+        console.log(`[Lyrics/Hunter] Attempt 1 (Strict): "${cleanArtist}" - "${cleanTitle}" (${durationSec}s)`);
         const res = await axios.get('https://lrclib.net/api/get', {
-            params: { artist_name: cleanArtist, track_name: cleanTitle, duration: durationSec || undefined },
-            timeout: 2000
+            ...axiosConfig,
+            params: { artist_name: cleanArtist, track_name: cleanTitle, duration: durationSec || undefined }
         });
-        if (res.data) return res.data;
+        if (res.data) {
+            console.log(`[Lyrics/Hunter] ✅ Strict Match Found: ${res.data.trackName} - ${res.data.artistName}`);
+            return res.data;
+        }
     } catch (e) {}
 
     // Strategy 2: Parallel Search with Scoring
@@ -118,11 +127,12 @@ async function getLyricsFromLRCLIB(artist, title, durationMs) {
     ];
 
     try {
+        console.log(`[Lyrics/Hunter] Attempt 2 (Parallel Search): Queries: [${searchPatterns.join(', ')}]`);
         // execute all search queries in parallel
         const searchPromises = searchPatterns.map(query => 
             axios.get('https://lrclib.net/api/search', {
-                params: { q: query },
-                timeout: 3000
+                ...axiosConfig,
+                params: { q: query }
             }).catch(() => ({ data: [] }))
         );
 
@@ -132,6 +142,7 @@ async function getLyricsFromLRCLIB(artist, title, durationMs) {
 
         // Flatten all results from different search patterns
         const allTracks = results.flatMap(r => r.data || []);
+        console.log(`[Lyrics/Hunter] Found ${allTracks.length} candidates in total. Scoring...`);
 
         for (const item of allTracks) {
             let score = 0;
@@ -168,10 +179,12 @@ async function getLyricsFromLRCLIB(artist, title, durationMs) {
         }
 
         if (bestCandidate && highestScore > 40) {
-            const detailRes = await axios.get(`https://lrclib.net/api/get/${bestCandidate.id}`, { timeout: 2000 });
-            return detailRes.data;
+            console.log(`[Lyrics/Hunter] ✅ Best Match Picked: ${bestCandidate.trackName} - ${bestCandidate.artistName} (Score: ${highestScore})`);
+            return bestCandidate;
         }
-    } catch (e) {}
+    } catch (e) {
+        console.error('[Lyrics/Hunter] ❌ Parallel search error:', e.message);
+    }
 
     return null;
 }
