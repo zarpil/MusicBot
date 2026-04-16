@@ -43,37 +43,45 @@ const PRESETS = {
 async function toggleFilter(player, filterName) {
     if (!player) return;
     
-    // Get currently active filters from player metadata
     let activeFilters = player.get('activeFilters') || {};
+    const preset = PRESETS[filterName];
     
     if (activeFilters[filterName]) {
-        // Toggle OFF: Reset this specific filter
+        // Toggle OFF
         delete activeFilters[filterName];
         
         if (filterName === 'bassboost') {
-            await player.filterManager.setEqualizer([]);
+            await player.filterManager.clearEQ();
         } else if (filterName === 'nightcore' || filterName === 'vaporwave') {
-            await player.filterManager.setTimescale(null);
+            player.filterManager.data.timescale = null;
+            await player.filterManager.applyPlayerFilters();
         } else if (filterName === '8d') {
-            await player.filterManager.setRotation(null);
+            player.filterManager.data.rotation = null;
+            await player.filterManager.applyPlayerFilters();
         }
     } else {
-        // Toggle ON: Apply the preset
-        const preset = PRESETS[filterName];
+        // Toggle ON
         if (!preset) return;
 
-        // Mutually exclusive filters (Nightcore vs Vaporwave)
+        // Mutual exclusivity
         if (filterName === 'nightcore' && activeFilters['vaporwave']) delete activeFilters['vaporwave'];
         if (filterName === 'vaporwave' && activeFilters['nightcore']) delete activeFilters['nightcore'];
 
         activeFilters[filterName] = true;
 
-        if (preset.equalizer) await player.filterManager.setEqualizer(preset.equalizer);
-        if (preset.timescale) await player.filterManager.setTimescale(preset.timescale);
-        if (preset.rotation) await player.filterManager.setRotation(preset.rotation);
+        if (preset.equalizer) {
+            await player.filterManager.setEQ(preset.equalizer);
+        }
+        if (preset.timescale) {
+            player.filterManager.data.timescale = preset.timescale;
+            await player.filterManager.applyPlayerFilters();
+        }
+        if (preset.rotation) {
+            player.filterManager.data.rotation = preset.rotation;
+            await player.filterManager.applyPlayerFilters();
+        }
     }
 
-    // Save state in player metadata
     player.set('activeFilters', activeFilters);
 }
 
