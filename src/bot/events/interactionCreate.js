@@ -56,6 +56,15 @@ module.exports = {
     if (!command) return;
 
     if (interaction.isAutocomplete()) {
+      if (typeof command.autocomplete === 'function') {
+        try {
+          await command.autocomplete(interaction);
+        } catch (err) {
+          console.error(`[Bot] Error during autocomplete for ${interaction.commandName}:`, err);
+        }
+      }
+      return;
+    }
 
     try {
       await command.execute(interaction);
