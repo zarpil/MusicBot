@@ -120,6 +120,7 @@ router.get('/', async (req, res) => {
           console.log(`[Spotify/LavaSrc] Result Type: ${result?.loadType}, Tracks: ${result?.tracks?.length || 0}`);
           
           if (result && result.tracks && result.tracks.length > 0) {
+            console.log('[Spotify/LavaSrc] Raw Top Results:', JSON.stringify(result.tracks.slice(0, 2), null, 2));
             const tracks = result.tracks.map(t => ({
               encoded: t.encoded,
               sourceName: t.info.sourceName,
@@ -179,6 +180,8 @@ router.get('/', async (req, res) => {
           Accept: 'application/json',
         },
       });
+
+      console.log('[Spotify/API] Raw Response (Top Results):', JSON.stringify(response.data?.tracks?.items?.slice(0, 2), null, 2));
 
       const tracks = response.data.tracks.items.map(t => ({
         sourceName: 'spotify',
