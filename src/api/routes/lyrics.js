@@ -140,6 +140,25 @@ async function getLyricsFromLRCLIB(artist, title, durationMs) {
         } catch (e) {}
     }
 
+    // Strategy 4: Reverse Search (Title only, then filter by artist)
+    try {
+        const searchRes = await axios.get('https://lrclib.net/api/search', {
+            params: { q: cleanTitle },
+            timeout: 4000
+        });
+
+        if (searchRes.data && searchRes.data.length > 0) {
+            const bestMatch = searchRes.data.find(item => 
+                isSimilar(item.artistName, cleanArtist) && 
+                (isSimilar(item.trackName, cleanTitle) || (durationSec && Math.abs(item.duration - durationSec) < 15))
+            );
+            if (bestMatch) {
+                const detailRes = await axios.get(`https://lrclib.net/api/get/${bestMatch.id}`);
+                return detailRes.data;
+            }
+        }
+    } catch (e) {}
+
     return null;
 }
 
