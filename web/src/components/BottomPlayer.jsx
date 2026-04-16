@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from 'react';
 import { Play, Pause, SkipForward, Volume2, Radio, Heart, Sparkles, X, Languages } from 'lucide-react';
 import axios from 'axios';
 import usePlayerStore from '../store/usePlayerStore';
