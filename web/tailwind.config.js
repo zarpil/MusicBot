@@ -10,7 +10,7 @@ export default {
         background: '#121212',
         surface: '#181818',
         surfaceHighlight: '#282828',
-        primary: '#1db954', // Spotify Green
+        primary: '#eb40a9', // Tussi Pink
         textPrimary: '#ffffff',
         textSecondary: '#a7a7a7'
       }
