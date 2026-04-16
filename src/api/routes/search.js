@@ -261,7 +261,12 @@ router.get('/', async (req, res) => {
     console.error(`[API] Search CRASH for "${req.query.q}":`, err.message);
     
     if (spotifyStatus === 429) {
-      return res.status(429).json({ error: 'Spotify rate limit alcanzado. Por favor espera unos segundos.' });
+      console.warn(`[Spotify] Rate limit hit (429). Returning temporary empty results.`);
+      return res.json({ 
+        loadType: 'search', 
+        tracks: [], 
+        error: 'Spotify está limitando las peticiones. Prueba de nuevo en unos minutos.' 
+      });
     }
     
     res.status(500).json({ error: 'Error interno al buscar. Revisa la consola del servidor.' });

@@ -133,7 +133,7 @@ export default function Search({ guildId }) {
         });
         
         const newTracks = res.data.tracks || [];
-        setError(null);
+        setError(res.data.error || null);
         
         if (isInitial) {
             setResults(newTracks);
