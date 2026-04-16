@@ -34,7 +34,7 @@ function getSetupEmbed(player) {
         embed.setFooter({ text: `Estado: ${status} | Volumen: ${player.volume}% | Autoplay: ${autoplay}` });
     } else {
         embed.setDescription('No hay nada sonando ahora mismo.\n\nEscribe el **nombre de una canción** o una **URL** aquí abajo para empezar a reproducir.')
-            .setImage('https://imgur.com/a/e9n9OOQ') // A placeholder professional music banner
+            .setImage('https://i.imgur.com/JughdYl.jpeg') // A placeholder professional music banner
             .setFooter({ text: 'Tussi Music | By @p0u' });
     }
 
