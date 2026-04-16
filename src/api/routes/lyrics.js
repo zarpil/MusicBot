@@ -94,19 +94,11 @@ async function getLyricsFromLRCLIB(artist, title, durationMs) {
     let cleanTitle = cleanName(title);
     
     const axiosConfig = {
-        headers: { 'User-Agent': 'TussiMusicBot/2.0 (HighPrecisionHunter)' },
+        headers: { 'User-Agent': 'TussiMusicBot/3.0 (ReliableHunter)' },
         timeout: 4000
     };
 
-    // Strategy: Remove redundant artist name from title
-    if (cleanTitle.toLowerCase().includes(cleanArtist.toLowerCase())) {
-        const regex = new RegExp(cleanArtist.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'gi');
-        cleanTitle = cleanTitle.replace(regex, '').trim();
-        cleanTitle = cleanTitle.replace(/^[^a-z0-9]+|[^a-z0-9]+$/gi, '').trim();
-        if (!cleanTitle) cleanTitle = cleanName(title);
-    }
-    
-    // Strategy 1: Strict Get (Sequential because it's fast and highly precise)
+    // Strategy 1: Strict Get (Most precise)
     try {
         console.log(`[Lyrics/Hunter] Attempt 1 (Strict): "${cleanArtist}" - "${cleanTitle}" (${durationSec}s)`);
         const res = await axios.get('https://lrclib.net/api/get', {
@@ -114,77 +106,80 @@ async function getLyricsFromLRCLIB(artist, title, durationMs) {
             params: { artist_name: cleanArtist, track_name: cleanTitle, duration: durationSec || undefined }
         });
         if (res.data) {
-            console.log(`[Lyrics/Hunter] ✅ Strict Match Found: ${res.data.trackName} - ${res.data.artistName}`);
+            console.log(`[Lyrics/Hunter] ✅ Strict Match Found!`);
             return res.data;
         }
     } catch (e) {}
 
-    // Strategy 2: Parallel Search with Scoring
+    // Strategy 2: Sequential Deep Search with Early Exit
     const searchPatterns = [
         `${cleanArtist} ${cleanTitle}`,
         cleanTitle,
         `${cleanArtist} ${cleanTitle.replace(/\s/g, '')}`
     ];
 
-    try {
-        console.log(`[Lyrics/Hunter] Attempt 2 (Parallel Search): Queries: [${searchPatterns.join(', ')}]`);
-        // execute all search queries in parallel
-        const searchPromises = searchPatterns.map(query => 
-            axios.get('https://lrclib.net/api/search', {
+    let bestCandidate = null;
+    let highestScore = 0;
+
+    for (const query of searchPatterns) {
+        try {
+            console.log(`[Lyrics/Hunter] Searching: "${query}"...`);
+            const searchRes = await axios.get('https://lrclib.net/api/search', {
                 ...axiosConfig,
                 params: { q: query }
-            }).catch(() => ({ data: [] }))
-        );
+            });
 
-        const results = await Promise.all(searchPromises);
-        let bestCandidate = null;
-        let highestScore = 0;
+            const tracks = searchRes.data || [];
+            for (const item of tracks) {
+                let score = 0;
+                const normArtist = normalize(item.artistName);
+                const normCleanArtist = normalize(cleanArtist);
+                const normTitle = normalize(item.trackName);
+                const normCleanTitle = normalize(cleanTitle);
 
-        // Flatten all results from different search patterns
-        const allTracks = results.flatMap(r => r.data || []);
-        console.log(`[Lyrics/Hunter] Found ${allTracks.length} candidates in total. Scoring...`);
+                // Artist score (Max 50)
+                if (normArtist === normCleanArtist) score += 50;
+                else if (isSimilar(normArtist, normCleanArtist)) score += 30;
 
-        for (const item of allTracks) {
-            let score = 0;
-            const normArtist = normalize(item.artistName);
-            const normCleanArtist = normalize(cleanArtist);
-            const normTitle = normalize(item.trackName);
-            const normCleanTitle = normalize(cleanTitle);
+                // Title score (Max 50)
+                if (normTitle === normCleanTitle) score += 50;
+                else if (isSimilar(normTitle, normCleanTitle)) score += 30;
 
-            // Artist score
-            if (normArtist === normCleanArtist) score += 50;
-            else if (isSimilar(normArtist, normCleanArtist)) score += 20;
+                // Duration score (Max 20)
+                if (durationSec) {
+                    const diff = Math.abs(item.duration - durationSec);
+                    if (diff <= 3) score += 20;
+                    else if (diff <= 15) score += 10;
+                }
 
-            // Title score
-            if (normTitle === normCleanTitle) score += 50;
-            else if (isSimilar(normTitle, normCleanTitle)) score += 20;
+                // Small penalty if the artist is completely different but title matches
+                if (normTitle === normCleanTitle && normArtist !== normCleanArtist && !isSimilar(normArtist, normCleanArtist)) {
+                    score -= 20;
+                }
 
-            // Duration score
-            if (durationSec) {
-                const diff = Math.abs(item.duration - durationSec);
-                if (diff <= 2) score += 20;
-                else if (diff <= 10) score += 10;
-                else if (diff <= 20) score += 5;
+                if (score > highestScore) {
+                    highestScore = score;
+                    bestCandidate = item;
+                }
             }
 
-            // Penalty
-            if (normTitle === normCleanTitle && normArtist !== normCleanArtist && !isSimilar(normArtist, normCleanArtist)) {
-                score -= 30;
+            // Early exit if we found a very high quality match
+            if (highestScore >= 80) {
+                console.log(`[Lyrics/Hunter] ✅ Strong match found (${highestScore} pts). Stopping search.`);
+                break;
             }
-
-            if (score > highestScore) {
-                highestScore = score;
-                bestCandidate = item;
-            }
+        } catch (e) {
+            console.error(`[Lyrics/Hunter] Search error for "${query}":`, e.message);
         }
-
-        if (bestCandidate && highestScore > 40) {
-            console.log(`[Lyrics/Hunter] ✅ Best Match Picked: ${bestCandidate.trackName} - ${bestCandidate.artistName} (Score: ${highestScore})`);
-            return bestCandidate;
-        }
-    } catch (e) {
-        console.error('[Lyrics/Hunter] ❌ Parallel search error:', e.message);
     }
+
+    if (bestCandidate && highestScore >= 30) {
+        console.log(`[Lyrics/Hunter] ✅ Final Pick: ${bestCandidate.trackName} - ${bestCandidate.artistName} (Score: ${highestScore})`);
+        return bestCandidate;
+    }
+
+    return null;
+}
 
     return null;
 }
