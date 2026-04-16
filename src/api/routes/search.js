@@ -116,7 +116,8 @@ router.get('/', async (req, res) => {
 
         try {
           console.log(`[Spotify/LavaSrc] Searching: ${lavalinkQuery}`);
-          const result = await node.search(lavalinkQuery, 'dashboard');
+          const result = await node.search(lavalinkQuery, { username: 'Dashboard', id: '0' });
+          console.log(`[Spotify/LavaSrc] Result Type: ${result?.loadType}, Tracks: ${result?.tracks?.length || 0}`);
           
           if (result && result.tracks && result.tracks.length > 0) {
             const tracks = result.tracks.map(t => ({
@@ -132,14 +133,16 @@ router.get('/', async (req, res) => {
             setCachedSpotify(cacheKey, tracks);
             
             // For playlist/album loads, return all tracks
-            if (result.loadType === 'playlist') {
+            if (result.loadType === 'playlist' || result.loadType === 'PLAYLIST_LOADED') {
               const listName = result.playlist?.name || result.playlist?.title || 'Lista de Spotify';
               return res.json({ loadType: 'playlist', tracks, playlistName: listName });
             }
             return res.json({ loadType: 'search', tracks });
+          } else if (result?.loadType === 'error') {
+            console.error(`[Spotify/LavaSrc] Search error: ${result.exception?.message}`);
           }
         } catch (lavasrcErr) {
-          console.warn(`[Spotify/LavaSrc] Failed, falling back to direct API: ${lavasrcErr.message}`);
+          console.warn(`[Spotify/LavaSrc] Failed with exception, falling back to direct API: ${lavasrcErr.message}`);
         }
       }
 

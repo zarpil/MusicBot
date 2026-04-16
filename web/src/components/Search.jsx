@@ -28,6 +28,7 @@ export default function Search({ guildId }) {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [error, setError] = useState(null);
     const [playlistInfo, setPlaylistInfo] = useState(null);
+    const [rateLimitCooldown, setRateLimitCooldown] = useState(false);
     const dropdownRef = useRef(null);
     const loadMoreRef = useRef(null);
     const [favUris, setFavUris] = useState(new Set());
@@ -171,6 +172,8 @@ export default function Search({ guildId }) {
             setHasMore(false); // Stop infinite loop on error
             if (err.response?.status === 429) {
                 setError('Demasiadas búsquedas seguidas. Espera unos segundos e inténtalo de nuevo.');
+                setRateLimitCooldown(true);
+                setTimeout(() => setRateLimitCooldown(false), 3000);
             } else {
                 setError('Error al buscar en Spotify. Revisa la configuración de la API.');
             }
@@ -254,10 +257,11 @@ export default function Search({ guildId }) {
                     <button
                         type="button"
                         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                        className="h-full bg-white/5 border border-white/10 hover:bg-white/10 text-white rounded-2xl px-4 flex items-center gap-3 transition min-w-[140px] shadow-lg"
+                        disabled={rateLimitCooldown}
+                        className={`h-full bg-white/5 border border-white/10 hover:bg-white/10 text-white rounded-2xl px-4 flex items-center gap-3 transition min-w-[140px] shadow-lg ${rateLimitCooldown ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                         <activeSource.icon size={20} className={activeSource.color} />
-                        <span className="font-medium text-sm">{activeSource.name}</span>
+                        <span className="font-medium text-sm">{rateLimitCooldown ? 'Esperando...' : activeSource.name}</span>
                         <ChevronDown size={16} className={`ml-auto transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
                     </button>
 
