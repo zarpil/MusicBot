@@ -13,16 +13,24 @@ async function getSpotifyToken() {
   const clientId = process.env.SPOTIFY_CLIENT_ID;
   const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
 
-  if (!clientId || !clientSecret) return null;
+  if (!clientId || !clientSecret) {
+    console.warn('[Spotify] Missing SPOTIFY_CLIENT_ID or SPOTIFY_CLIENT_SECRET in .env');
+    return null;
+  }
 
   if (spotifyToken && Date.now() < spotifyTokenExpiresAt) {
     return spotifyToken;
   }
 
   try {
+    console.log('[Spotify] Fetching new access token...');
+    
+    const params = new URLSearchParams();
+    params.append('grant_type', 'client_credentials');
+
     const response = await axios.post(
       'https://accounts.spotify.com/api/token',
-      'grant_type=client_credentials',
+      params.toString(),
       {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -31,11 +39,20 @@ async function getSpotifyToken() {
       }
     );
 
-    spotifyToken = response.data.access_token;
-    spotifyTokenExpiresAt = Date.now() + (response.data.expires_in - 300) * 1000;
-    return spotifyToken;
+    if (response.data && response.data.access_token) {
+      spotifyToken = response.data.access_token;
+      spotifyTokenExpiresAt = Date.now() + (response.data.expires_in - 300) * 1000;
+      console.log('[Spotify] Token refreshed successfully');
+      return spotifyToken;
+    }
+    
+    console.error('[Spotify] No access token in response:', response.data);
+    return null;
   } catch (err) {
-    console.error('[Spotify] Error fetching token:', err.message);
+    console.error('[Spotify] Error fetching token:', err.response?.data || err.message);
+    if (err.response?.status === 401) {
+      console.error('[Spotify] Authentication failed. Check your Client ID and Client Secret.');
+    }
     return null;
   }
 }
