@@ -79,7 +79,8 @@ router.get('/', async (req, res) => {
       if (!token) return res.status(500).json({ error: 'Spotify API not configured' });
 
       // Clamp params within Spotify's allowed ranges
-      const spotifyLimit  = Math.min(50, Math.max(1, Number(limit) || 20));
+      // NOTE: Spotify's Feb 2026 update caps limit to 10 for Development Mode apps
+      const spotifyLimit  = Math.min(10, Math.max(1, Number(limit) || 10));
       const spotifyOffset = Math.min(950, Math.max(0, Number(offset) || 0));
       
       // Build URL manually - avoid Axios serialization issues

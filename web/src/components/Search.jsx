@@ -113,26 +113,27 @@ export default function Search({ guildId }) {
         else setLoadingMore(true);
 
         try {
-            const currentOffset = isInitial ? 0 : offset;
-            const res = await axios.get('/api/search', {
-                params: { q: query, source, offset: currentOffset, limit: 20 }
-            });
-            
-            const newTracks = res.data.tracks || [];
-            setError(null);
-            
-            if (isInitial) {
-                setResults(newTracks);
-                setOffset(20);
-            } else {
-                setResults(prev => [...prev, ...newTracks]);
-                setOffset(prev => prev + 20);
-            }
+        const pageLimit = source === 'spotify' ? 10 : 20;
+        const currentOffset = isInitial ? 0 : offset;
+        const res = await axios.get('/api/search', {
+            params: { q: query, source, offset: currentOffset, limit: pageLimit }
+        });
+        
+        const newTracks = res.data.tracks || [];
+        setError(null);
+        
+        if (isInitial) {
+            setResults(newTracks);
+            setOffset(pageLimit);
+        } else {
+            setResults(prev => [...prev, ...newTracks]);
+            setOffset(prev => prev + pageLimit);
+        }
 
-            // If we got fewer results than requested, it means we reached the end
-            if (newTracks.length < 20) {
-                setHasMore(false);
-            }
+        // If we got fewer results than requested, it means we reached the end
+        if (newTracks.length < pageLimit) {
+            setHasMore(false);
+        }
             
             // For YouTube/SoundCloud, Lavalink doesn't support offset, 
             // so we stop after 1 page to avoid duplicates unless it's Spotify
