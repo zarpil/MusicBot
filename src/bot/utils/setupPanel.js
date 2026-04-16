@@ -91,9 +91,38 @@ function getSetupButtons(player) {
     return [row1, row2];
 }
 
+const lastUpdate = new Map();
+const pendingUpdate = new Map();
+
 async function updateSetupPanel(client, guildId, player) {
     const guildData = db.getGuild(guildId);
     if (!guildData || !guildData.setup_channel_id || !guildData.setup_message_id) return;
+
+    const now = Date.now();
+    const cooldown = 2500; // 2.5 seconds throttle
+
+    // If there's a pending update, cancel it; we'll schedule a newer one
+    if (pendingUpdate.has(guildId)) {
+        clearTimeout(pendingUpdate.get(guildId));
+        pendingUpdate.delete(guildId);
+    }
+
+    const last = lastUpdate.get(guildId) || 0;
+    const diff = now - last;
+
+    if (diff < cooldown) {
+        // We are within the cooldown. Schedule a "final" update for when the cooldown expires.
+        const delay = cooldown - diff;
+        const timer = setTimeout(() => {
+            updateSetupPanel(client, guildId, player);
+            pendingUpdate.delete(guildId);
+        }, delay);
+        pendingUpdate.set(guildId, timer);
+        return;
+    }
+
+    // Passed cooldown, we can update now
+    lastUpdate.set(guildId, now);
 
     try {
         const channel = await client.channels.fetch(guildData.setup_channel_id).catch(() => null);
@@ -107,7 +136,13 @@ async function updateSetupPanel(client, guildId, player) {
             components: getSetupButtons(player)
         });
     } catch (err) {
-        console.error(`[SetupPanel] Error updating panel for guild ${guildId}:`, err);
+        // If we hit a rate limit (429), reset cooldown to try later
+        if (err.status === 429) {
+            console.warn(`[SetupPanel] Rate limited on guild ${guildId}, retrying in 5s...`);
+            lastUpdate.set(guildId, Date.now() + 5000); 
+        } else {
+            console.error(`[SetupPanel] Error updating panel for guild ${guildId}:`, err);
+        }
     }
 }
 

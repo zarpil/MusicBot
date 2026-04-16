@@ -55,24 +55,25 @@ export default function BottomPlayer() {
     }
   };
 
+  const volumeDebounceTimer = useRef(null);
   const handleVolumeChange = (e) => {
     const val = parseInt(e.target.value);
     setLocalVolume(val);
     
-    // Clear existing timer
+    // Clear existing sync/debounce timers
     if (ignoreSyncTimer.current) clearTimeout(ignoreSyncTimer.current);
+    if (volumeDebounceTimer.current) clearTimeout(volumeDebounceTimer.current);
     
-    // Lock sync for 1.5 seconds to prevent snap-back
+    // Lock sync to prevent snap-back
     ignoreSyncTimer.current = setTimeout(() => {
       ignoreSyncTimer.current = null;
     }, 1500);
 
-    // Debounce the actual command
-    const debounceTimer = setTimeout(() => {
+    // Debounce the actual command to the server
+    volumeDebounceTimer.current = setTimeout(() => {
       setVolume(val);
-    }, 50);
-
-    return () => clearTimeout(debounceTimer);
+      volumeDebounceTimer.current = null;
+    }, 150); // 150ms settling time
   };
 
   if (loading) {
