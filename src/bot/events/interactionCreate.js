@@ -55,7 +55,7 @@ module.exports = {
                     await player.setVolume(Math.max(0, player.volume - 10));
                     break;
                 case 'PLAYER_VOL_UP':
-                    await player.setVolume(Math.min(150, player.volume + 10));
+                    await player.setVolume(Math.min(100, player.volume + 10));
                     break;
                 case 'PLAYER_AUTOPLAY':
                     const nextAutoplay = !player.get('autoplay');
