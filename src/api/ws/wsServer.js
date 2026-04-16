@@ -2,6 +2,8 @@
 
 const WebSocket = require('ws');
 const db = require('../../db/database');
+const { serializePlayer, serializeTrack } = require('../../utils/playerSerializers');
+const { ensurePlayer } = require('../../bot/utils/voiceUtils');
 
 /** guild ID → Set<WebSocket> */
 const rooms = new Map();
@@ -130,25 +132,7 @@ function initWsServer(httpServer, getManager, discordClient) {
 
                 // If player doesn't exist, try to auto-join the user
                 if (!player) {
-                  const guild = discordClient.guilds.cache.get(guildId);
-                  if (!guild) throw new Error('Servidor no encontrado');
-
-                  const member = await guild.members.fetch(user.id).catch(() => null);
-                  if (!member || !member.voice.channel) {
-                    throw new Error('Debes estar en un canal de voz para reproducir música');
-                  }
-
-                  player = manager.createPlayer({
-                    guildId: guildId,
-                    voiceChannelId: member.voice.channel.id,
-                    textChannelId: null, // Optional: could find first usable text channel
-                    selfDeaf: true,
-                    selfMute: false,
-                    shardId: guild.shardId,
-                  });
-
-                  await player.connect();
-                  console.log(`[WS] Auto-joined user ${user.username} in voice channel: ${member.voice.channel.name}`);
+                  player = await ensurePlayer(manager, discordClient.guilds.cache.get(guildId), user);
                 }
 
                 if (!player) throw new Error('No se pudo crear el reproductor');
@@ -326,49 +310,6 @@ function send(ws, payload) {
 function getWsServer() {
   if (!_wss) throw new Error('WS server not initialised');
   return { broadcast, rooms };
-}
-
-// ── Serialisation helpers (duplicated from index.js to avoid circular dep) ────
-function serializeTrack(track) {
-  if (!track) return null;
-  // Requester could be a string (legacy/direct) or a user object
-  let requesterInfo = null;
-  if (track.requester) {
-    if (typeof track.requester === 'object') {
-      requesterInfo = {
-        username: track.requester.username || track.requester.tag,
-        avatar: track.requester.avatar || (track.requester.displayAvatarURL ? track.requester.displayAvatarURL({ size: 32 }) : null)
-      };
-    } else {
-      requesterInfo = { username: track.requester, avatar: null };
-    }
-  }
-
-  return {
-    encoded:    track.encoded,
-    title:      track.info.title,
-    author:     track.info.author,
-    duration:   track.info.duration,
-    uri:        track.info.uri,
-    artworkUrl: track.info.artworkUrl || null,
-    sourceName: track.info.sourceName,
-    isStream:   track.info.isStream,
-    requester:  requesterInfo,
-  };
-}
-
-function serializePlayer(player) {
-  if (!player) return null;
-  return {
-    guildId:  player.guildId,
-    playing:  player.playing,
-    paused:   player.paused,
-    volume:   player.volume,
-    position: player.position,
-    autoplay: player.get('autoplay') ?? false,
-    current:  serializeTrack(player.queue.current),
-    queue:    (player.queue.tracks || []).map(serializeTrack),
-  };
 }
 
 module.exports = { initWsServer, broadcast, getWsServer };

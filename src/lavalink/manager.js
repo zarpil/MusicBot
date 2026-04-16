@@ -2,6 +2,7 @@
 
 const { LavalinkManager } = require('lavalink-client');
 const db = require('../db/database');
+const { updateSetupPanel } = require('../bot/utils/setupPanel');
 
 /** @type {LavalinkManager|null} */
 let _manager = null;
@@ -63,6 +64,7 @@ function createManager(discordClient) {
 
   _manager.on('trackStart', (player, track) => {
     console.log(`[Lavalink] trackStart: ${track?.info?.title} in ${player.guildId}`);
+    updateSetupPanel(discordClient, player.guildId, player);
   });
   
   // Shared Autoplay Logic
@@ -158,6 +160,7 @@ function createManager(discordClient) {
     player.set('lastAutoplayTrigger', now);
     
     await handleAutoplay(player, track);
+    updateSetupPanel(discordClient, player.guildId, player);
   });
 
   _manager.on('queueEnd', async (player, track, payload) => {
@@ -169,6 +172,11 @@ function createManager(discordClient) {
     player.set('lastAutoplayTrigger', now);
 
     await handleAutoplay(player, track);
+    updateSetupPanel(discordClient, player.guildId, player);
+  });
+
+  _manager.on('playerDestroy', (player) => {
+    updateSetupPanel(discordClient, player.guildId, null);
   });
   
   _manager.on('trackStuck', (player, track, payload) => {

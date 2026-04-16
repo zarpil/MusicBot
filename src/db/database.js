@@ -100,6 +100,16 @@ function init() {
     `);
   }
 
+  const guildCols = _db.prepare("PRAGMA table_info(guilds)").all();
+  const hasSetup = guildCols.some(c => c.name === 'setup_channel_id');
+  if (!hasSetup) {
+    console.log('[DB] Migrating guilds table for setup channel...');
+    _db.exec(`
+      ALTER TABLE guilds ADD COLUMN setup_channel_id TEXT;
+      ALTER TABLE guilds ADD COLUMN setup_message_id TEXT;
+    `);
+  }
+
   console.log('[DB] SQLite database ready at', DB_PATH);
 }
 
@@ -113,6 +123,10 @@ function upsertGuild(id, { name = null, volume = 80, autoplay = 0 } = {}) {
       volume   = excluded.volume,
       autoplay = excluded.autoplay
   `).run(id, name, volume, autoplay);
+}
+
+function setSetupInfo(id, channelId, messageId) {
+  return getDb().prepare('UPDATE guilds SET setup_channel_id = ?, setup_message_id = ? WHERE id = ?').run(channelId, messageId, id);
 }
 
 function getGuild(id) {
@@ -266,6 +280,7 @@ module.exports = {
   upsertGuild,
   getGuild,
   setAutoplay,
+  setSetupInfo,
   getPlaylists,
   getPlaylist,
   createPlaylist,
