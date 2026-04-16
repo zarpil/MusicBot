@@ -101,79 +101,77 @@ async function getLyricsFromLRCLIB(artist, title, durationMs) {
         if (!cleanTitle) cleanTitle = cleanName(title);
     }
     
-    // Strategy 1: Strict Get (Best sync)
+    // Strategy 1: Strict Get (Sequential because it's fast and highly precise)
     try {
         const res = await axios.get('https://lrclib.net/api/get', {
             params: { artist_name: cleanArtist, track_name: cleanTitle, duration: durationSec || undefined },
-            timeout: 3000
+            timeout: 2000
         });
         if (res.data) return res.data;
     } catch (e) {}
 
-    // Strategy 2: Multi-Query Search with Scoring
+    // Strategy 2: Parallel Search with Scoring
     const searchPatterns = [
         `${cleanArtist} ${cleanTitle}`,
         cleanTitle,
         `${cleanArtist} ${cleanTitle.replace(/\s/g, '')}`
     ];
 
-    let bestCandidate = null;
-    let highestScore = 0;
-
-    for (const query of searchPatterns) {
-        try {
-            const searchRes = await axios.get('https://lrclib.net/api/search', {
+    try {
+        // execute all search queries in parallel
+        const searchPromises = searchPatterns.map(query => 
+            axios.get('https://lrclib.net/api/search', {
                 params: { q: query },
-                timeout: 4000
-            });
+                timeout: 3000
+            }).catch(() => ({ data: [] }))
+        );
 
-            if (searchRes.data && searchRes.data.length > 0) {
-                for (const item of searchRes.data) {
-                    let score = 0;
-                    const normArtist = normalize(item.artistName);
-                    const normCleanArtist = normalize(cleanArtist);
-                    const normTitle = normalize(item.trackName);
-                    const normCleanTitle = normalize(cleanTitle);
+        const results = await Promise.all(searchPromises);
+        let bestCandidate = null;
+        let highestScore = 0;
 
-                    // Artist score
-                    if (normArtist === normCleanArtist) score += 50;
-                    else if (isSimilar(normArtist, normCleanArtist)) score += 20;
+        // Flatten all results from different search patterns
+        const allTracks = results.flatMap(r => r.data || []);
 
-                    // Title score
-                    if (normTitle === normCleanTitle) score += 50;
-                    else if (isSimilar(normTitle, normCleanTitle)) score += 20;
+        for (const item of allTracks) {
+            let score = 0;
+            const normArtist = normalize(item.artistName);
+            const normCleanArtist = normalize(cleanArtist);
+            const normTitle = normalize(item.trackName);
+            const normCleanTitle = normalize(cleanTitle);
 
-                    // Duration score (closer is better, max 20 pts)
-                    if (durationSec) {
-                        const diff = Math.abs(item.duration - durationSec);
-                        if (diff <= 2) score += 20;
-                        else if (diff <= 10) score += 10;
-                        else if (diff <= 20) score += 5;
-                    }
+            // Artist score
+            if (normArtist === normCleanArtist) score += 50;
+            else if (isSimilar(normArtist, normCleanArtist)) score += 20;
 
-                    // Penalize results from different artists if track name is identical but artist is dubious
-                    if (normTitle === normCleanTitle && normArtist !== normCleanArtist && !isSimilar(normArtist, normCleanArtist)) {
-                        score -= 30;
-                    }
+            // Title score
+            if (normTitle === normCleanTitle) score += 50;
+            else if (isSimilar(normTitle, normCleanTitle)) score += 20;
 
-                    if (score > highestScore) {
-                        highestScore = score;
-                        bestCandidate = item;
-                    }
-                }
+            // Duration score
+            if (durationSec) {
+                const diff = Math.abs(item.duration - durationSec);
+                if (diff <= 2) score += 20;
+                else if (diff <= 10) score += 10;
+                else if (diff <= 20) score += 5;
             }
-        } catch (e) {}
-        
-        // If we found a very strong match (>90 points), stop searching early
-        if (highestScore >= 90) break;
-    }
 
-    if (bestCandidate && highestScore > 40) {
-        try {
-            const detailRes = await axios.get(`https://lrclib.net/api/get/${bestCandidate.id}`);
+            // Penalty
+            if (normTitle === normCleanTitle && normArtist !== normCleanArtist && !isSimilar(normArtist, normCleanArtist)) {
+                score -= 30;
+            }
+
+            if (score > highestScore) {
+                highestScore = score;
+                bestCandidate = item;
+            }
+        }
+
+        if (bestCandidate && highestScore > 40) {
+            const detailRes = await axios.get(`https://lrclib.net/api/get/${bestCandidate.id}`, { timeout: 2000 });
             return detailRes.data;
-        } catch (e) {}
-    }
+        }
+    } catch (e) {}
 
     return null;
 }
