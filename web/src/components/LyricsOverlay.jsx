@@ -71,7 +71,7 @@ export default function LyricsOverlay({ isOpen, onClose }) {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-300">
+        <div className="fixed inset-x-0 top-0 bottom-24 z-[200] flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-300">
             {/* Background Backdrop with Dynamic Blur */}
             <div className="absolute inset-0 bg-black/80 backdrop-blur-3xl" />
             

@@ -10,10 +10,34 @@ const lyricsCache = new Map();
 const CACHE_TTL = 3600 * 1000; // 1 hour
 
 /**
+ * Normalizes a string for comparison (lowercase, no symbols, no spaces)
+ */
+function normalize(str) {
+    if (!str) return '';
+    return str.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+/**
+ * Checks if two strings are similar enough
+ */
+function isSimilar(s1, s2) {
+    const n1 = normalize(s1);
+    const n2 = normalize(s2);
+    return n1.includes(n2) || n2.includes(n1);
+}
+
+/**
  * Clean track title and artist names from common YouTube/Spotify clutter
  */
 function cleanName(text) {
     if (!text) return '';
+    // Special case: if it contains " - ", try to extract the title part
+    if (text.includes(' - ')) {
+        const parts = text.split(' - ');
+        // Usually the second part is the track name
+        text = parts[parts.length - 1];
+    }
+
     return text
         .replace(/\(Official Video.*?\)/gi, '')
         .replace(/\(Video Oficial.*?\)/gi, '')
@@ -23,8 +47,8 @@ function cleanName(text) {
         .replace(/\(Lyrics.*?\)/gi, '')
         .replace(/\[Official Video.*?\]/gi, '')
         .replace(/\[Lyric Video.*?\]/gi, '')
-        .replace(/\(.*?\)/g, '') // Remove any other parentheses
-        .replace(/\[.*?\]/g, '') // Remove any brackets
+        .replace(/\(.*?\)/g, '')
+        .replace(/\[.*?\]/g, '')
         .replace(/\bfeat\..*?\b/gi, '')
         .replace(/\bft\..*?\b/gi, '')
         .replace(/ - Remastered\b/gi, '')
@@ -60,62 +84,59 @@ function parseLRC(lrc) {
 }
 
 /**
- * Perform the actual request to LRCLIB
+ * Perform the actual request to LRCLIB with multiple fallback strategies
  */
 async function getLyricsFromLRCLIB(artist, title, durationMs) {
     const durationSec = durationMs ? Math.round(durationMs / 1000) : null;
+    const cleanTitle = cleanName(title);
+    const cleanArtist = cleanName(artist);
     
-    // Strategy 1: Strict Get (Best for sync)
+    // Strategy 1: Strict Get
     try {
         const res = await axios.get('https://lrclib.net/api/get', {
-            params: {
-                artist_name: artist,
-                track_name: title,
-                duration: durationSec || undefined
-            },
+            params: { artist_name: cleanArtist, track_name: cleanTitle, duration: durationSec || undefined },
             timeout: 3000
         });
         if (res.data) return res.data;
     } catch (e) {}
 
-    // Strategy 2: Clean and Search
-    const cleanTitle = cleanName(title);
-    const cleanArtist = cleanName(artist);
-    
-    // Try Get again with cleaned names
-    if (cleanTitle !== title || cleanArtist !== artist) {
+    // Strategy 2: Global Search with different patterns
+    const searchPatterns = [
+        `${cleanArtist} ${cleanTitle}`,               // "Nadal015 Street Shark"
+        cleanTitle,                                    // "Street Shark"
+        `${cleanArtist} ${cleanTitle.replace(/\s/g, '')}` // "Nadal015 Streetshark" (Handle joined words)
+    ];
+
+    for (const query of searchPatterns) {
         try {
-            const res = await axios.get('https://lrclib.net/api/get', {
-                params: {
-                    artist_name: cleanArtist,
-                    track_name: cleanTitle,
-                    duration: durationSec || undefined
-                },
-                timeout: 3000
+            const searchRes = await axios.get('https://lrclib.net/api/search', {
+                params: { q: query },
+                timeout: 4000
             });
-            if (res.data) return res.data;
+
+            if (searchRes.data && searchRes.data.length > 0) {
+                // Find best match in results
+                let bestMatch = null;
+                for (const item of searchRes.data) {
+                    const artistMatch = isSimilar(item.artistName, cleanArtist);
+                    const titleMatch = isSimilar(item.trackName, cleanTitle) || isSimilar(item.trackName, cleanTitle.replace(/\s/g, ''));
+                    const durationDiff = durationSec ? Math.abs(item.duration - durationSec) : 0;
+
+                    // If it's a strong match (Artist and Title similar enough and within duration range)
+                    if (titleMatch && (artistMatch || durationDiff < 10)) {
+                        bestMatch = item;
+                        break;
+                    }
+                }
+                
+                if (bestMatch) {
+                    // Fetch full data for the best match using ID
+                    const detailRes = await axios.get(`https://lrclib.net/api/get/${bestMatch.id}`);
+                    return detailRes.data;
+                }
+            }
         } catch (e) {}
     }
-
-    // Strategy 3: Global Search Fallback
-    try {
-        const query = `${cleanArtist} ${cleanTitle}`.trim();
-        const searchRes = await axios.get('https://lrclib.net/api/search', {
-            params: { q: query },
-            timeout: 4000
-        });
-
-        if (searchRes.data && searchRes.data.length > 0) {
-            // Find the best duration match (±10s)
-            if (durationSec) {
-                const bestMatch = searchRes.data.find(item => 
-                    Math.abs(item.duration - durationSec) <= 10 && item.syncedLyrics
-                ) || searchRes.data[0];
-                return bestMatch;
-            }
-            return searchRes.data[0];
-        }
-    } catch (e) {}
 
     return null;
 }
@@ -133,12 +154,12 @@ router.get('/', async (req, res) => {
         return res.json(cached.data);
     }
 
-    console.log(`[Lyrics] High-precision lookup for: ${artist} - ${title}`);
+    console.log(`[Lyrics] Advanced Hunter lookup for: ${artist} - ${title}`);
     
     const data = await getLyricsFromLRCLIB(artist, title, duration ? parseInt(duration) : null);
 
     if (!data) {
-        console.log(`[Lyrics] Still not found after fallback for: ${title}`);
+        console.log(`[Lyrics] Fail to hunt lyrics for: ${title}`);
         return res.status(404).json({ error: 'Lyrics not found' });
     }
 
