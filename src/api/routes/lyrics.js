@@ -181,9 +181,6 @@ async function getLyricsFromLRCLIB(artist, title, durationMs) {
     return null;
 }
 
-    return null;
-}
-
 
 router.get('/', async (req, res) => {
     const { title, artist, duration } = req.query;
