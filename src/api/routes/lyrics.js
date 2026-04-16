@@ -86,24 +86,22 @@ function parseLRC(lrc) {
 }
 
 /**
- * Perform the actual request to LRCLIB with multiple fallback strategies
+ * Perform the actual request to LRCLIB with multiple fallback and scoring strategies
  */
 async function getLyricsFromLRCLIB(artist, title, durationMs) {
     const durationSec = durationMs ? Math.round(durationMs / 1000) : null;
     let cleanArtist = cleanName(artist);
     let cleanTitle = cleanName(title);
     
-    // Strategy: Remove redundant artist name from title (e.g., "Nadal015 - Nadal015 Streetshark")
+    // Strategy: Remove redundant artist name from title
     if (cleanTitle.toLowerCase().includes(cleanArtist.toLowerCase())) {
         const regex = new RegExp(cleanArtist.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'gi');
         cleanTitle = cleanTitle.replace(regex, '').trim();
-        // Remove any leading/trailing dashes or symbols left after removal
         cleanTitle = cleanTitle.replace(/^[^a-z0-9]+|[^a-z0-9]+$/gi, '').trim();
-        // If we emptied the title, revert to original cleanTitle
         if (!cleanTitle) cleanTitle = cleanName(title);
     }
     
-    // Strategy 1: Strict Get
+    // Strategy 1: Strict Get (Best sync)
     try {
         const res = await axios.get('https://lrclib.net/api/get', {
             params: { artist_name: cleanArtist, track_name: cleanTitle, duration: durationSec || undefined },
@@ -112,12 +110,15 @@ async function getLyricsFromLRCLIB(artist, title, durationMs) {
         if (res.data) return res.data;
     } catch (e) {}
 
-    // Strategy 2: Global Search with different patterns
+    // Strategy 2: Multi-Query Search with Scoring
     const searchPatterns = [
-        `${cleanArtist} ${cleanTitle}`,               // "Nadal015 Street Shark"
-        cleanTitle,                                    // "Street Shark"
-        `${cleanArtist} ${cleanTitle.replace(/\s/g, '')}` // "Nadal015 Streetshark" (Handle joined words)
+        `${cleanArtist} ${cleanTitle}`,
+        cleanTitle,
+        `${cleanArtist} ${cleanTitle.replace(/\s/g, '')}`
     ];
+
+    let bestCandidate = null;
+    let highestScore = 0;
 
     for (const query of searchPatterns) {
         try {
@@ -127,50 +128,56 @@ async function getLyricsFromLRCLIB(artist, title, durationMs) {
             });
 
             if (searchRes.data && searchRes.data.length > 0) {
-                // Find best match in results
-                let bestMatch = null;
                 for (const item of searchRes.data) {
-                    const artistMatch = isSimilar(item.artistName, cleanArtist);
-                    const titleMatch = isSimilar(item.trackName, cleanTitle) || isSimilar(item.trackName, cleanTitle.replace(/\s/g, ''));
-                    const durationDiff = durationSec ? Math.abs(item.duration - durationSec) : 0;
+                    let score = 0;
+                    const normArtist = normalize(item.artistName);
+                    const normCleanArtist = normalize(cleanArtist);
+                    const normTitle = normalize(item.trackName);
+                    const normCleanTitle = normalize(cleanTitle);
 
-                    // If it's a strong match (Artist and Title similar enough and within duration range)
-                    if (titleMatch && (artistMatch || durationDiff < 10)) {
-                        bestMatch = item;
-                        break;
+                    // Artist score
+                    if (normArtist === normCleanArtist) score += 50;
+                    else if (isSimilar(normArtist, normCleanArtist)) score += 20;
+
+                    // Title score
+                    if (normTitle === normCleanTitle) score += 50;
+                    else if (isSimilar(normTitle, normCleanTitle)) score += 20;
+
+                    // Duration score (closer is better, max 20 pts)
+                    if (durationSec) {
+                        const diff = Math.abs(item.duration - durationSec);
+                        if (diff <= 2) score += 20;
+                        else if (diff <= 10) score += 10;
+                        else if (diff <= 20) score += 5;
                     }
-                }
-                
-                if (bestMatch) {
-                    // Fetch full data for the best match using ID
-                    const detailRes = await axios.get(`https://lrclib.net/api/get/${bestMatch.id}`);
-                    return detailRes.data;
+
+                    // Penalize results from different artists if track name is identical but artist is dubious
+                    if (normTitle === normCleanTitle && normArtist !== normCleanArtist && !isSimilar(normArtist, normCleanArtist)) {
+                        score -= 30;
+                    }
+
+                    if (score > highestScore) {
+                        highestScore = score;
+                        bestCandidate = item;
+                    }
                 }
             }
         } catch (e) {}
+        
+        // If we found a very strong match (>90 points), stop searching early
+        if (highestScore >= 90) break;
     }
 
-    // Strategy 4: Reverse Search (Title only, then filter by artist)
-    try {
-        const searchRes = await axios.get('https://lrclib.net/api/search', {
-            params: { q: cleanTitle },
-            timeout: 4000
-        });
-
-        if (searchRes.data && searchRes.data.length > 0) {
-            const bestMatch = searchRes.data.find(item => 
-                isSimilar(item.artistName, cleanArtist) && 
-                (isSimilar(item.trackName, cleanTitle) || (durationSec && Math.abs(item.duration - durationSec) < 15))
-            );
-            if (bestMatch) {
-                const detailRes = await axios.get(`https://lrclib.net/api/get/${bestMatch.id}`);
-                return detailRes.data;
-            }
-        }
-    } catch (e) {}
+    if (bestCandidate && highestScore > 40) {
+        try {
+            const detailRes = await axios.get(`https://lrclib.net/api/get/${bestCandidate.id}`);
+            return detailRes.data;
+        } catch (e) {}
+    }
 
     return null;
 }
+
 
 router.get('/', async (req, res) => {
     const { title, artist, duration } = req.query;
