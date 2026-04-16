@@ -13,8 +13,9 @@ let _wss = null;
  * Attach a WebSocket server to an existing HTTP server.
  * @param {import('http').Server} httpServer
  * @param {import('../lavalink/manager').getManager} getManager
+ * @param {import('discord.js').Client} discordClient
  */
-function initWsServer(httpServer, getManager) {
+function initWsServer(httpServer, getManager, discordClient) {
   _wss = new WebSocket.Server({ server: httpServer, path: '/ws' });
 
   const authStore = require('../../bot/utils/authStore');
@@ -122,8 +123,36 @@ function initWsServer(httpServer, getManager) {
             break;
 
           case 'ENQUEUE':
-            if (player && msg.track) {
+            if (msg.track) {
               try {
+                const manager = getManager();
+                let player = manager.players.get(guildId);
+
+                // If player doesn't exist, try to auto-join the user
+                if (!player) {
+                  const guild = discordClient.guilds.cache.get(guildId);
+                  if (!guild) throw new Error('Servidor no encontrado');
+
+                  const member = await guild.members.fetch(user.id).catch(() => null);
+                  if (!member || !member.voice.channel) {
+                    throw new Error('Debes estar en un canal de voz para reproducir música');
+                  }
+
+                  player = manager.createPlayer({
+                    guildId: guildId,
+                    voiceChannelId: member.voice.channel.id,
+                    textChannelId: null, // Optional: could find first usable text channel
+                    selfDeaf: true,
+                    selfMute: false,
+                    shardId: guild.shardId,
+                  });
+
+                  await player.connect();
+                  console.log(`[WS] Auto-joined user ${user.username} in voice channel: ${member.voice.channel.name}`);
+                }
+
+                if (!player) throw new Error('No se pudo crear el reproductor');
+
                 const query = msg.track.uri || msg.track._searchQuery || `${msg.track.author} - ${msg.track.title}`;
                 console.log(`[WS] Resolviendo pista para encolar: ${query}`);
                 const requester = {

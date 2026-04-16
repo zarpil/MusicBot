@@ -56,7 +56,7 @@ async function initApi(discordClient) {
 
   // ── HTTP + WebSocket server ────────────────────────────────────────────────
   const httpServer = http.createServer(app);
-  initWsServer(httpServer, getManager);
+  initWsServer(httpServer, getManager, discordClient);
 
   await new Promise(resolve => httpServer.listen(PORT, resolve));
   console.log(`[API] REST + WebSocket server running on http://localhost:${PORT}`);

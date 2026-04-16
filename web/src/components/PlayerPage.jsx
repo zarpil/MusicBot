@@ -46,37 +46,28 @@ export default function PlayerPage() {
           </div>
 
           <div className="p-4 md:p-6 overflow-y-auto flex-1">
-            {active ? (
-              <>
-                {view === 'player' ? (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
-                    <Search guildId={guildId} />
-                    <Queue />
-                  </div>
-                ) : view === 'history' ? (
-                  <History guildId={guildId} />
-                ) : view === 'favorites' ? (
-                  <FavoritesView />
-                ) : view === 'playlists' ? (
-                  <PlaylistsView 
-                    guildId={guildId} 
-                    onSelect={(id) => {
-                      setSelectedPlaylistId(id);
-                      setView('playlist-details');
-                    }} 
-                  />
-                ) : (
-                  <PlaylistDetails 
-                    playlistId={selectedPlaylistId} 
-                    onBack={() => setView('playlists')} 
-                  />
-                )}
-              </>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full text-center">
-                <h2 className="text-2xl font-bold mb-2">El bot no esta en ningun canal de voz</h2>
-                <p className="text-textSecondary">Unete a un canal de voz y usa <code className="bg-background px-2 py-1 rounded">/play</code> para empezar.</p>
+            {view === 'player' ? (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
+                <Search guildId={guildId} />
+                <Queue />
               </div>
+            ) : view === 'history' ? (
+              <History guildId={guildId} />
+            ) : view === 'favorites' ? (
+              <FavoritesView />
+            ) : view === 'playlists' ? (
+              <PlaylistsView 
+                guildId={guildId} 
+                onSelect={(id) => {
+                  setSelectedPlaylistId(id);
+                  setView('playlist-details');
+                }} 
+              />
+            ) : (
+              <PlaylistDetails 
+                playlistId={selectedPlaylistId} 
+                onBack={() => setView('playlists')} 
+              />
             )}
           </div>
         </main>
