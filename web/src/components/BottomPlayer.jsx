@@ -159,16 +159,16 @@ export default function BottomPlayer() {
           </button>
           
           <button 
-            onClick={() => setShowFilters(!showFilters)} 
-            className={`transition ${showFilters || Object.values(filters || {}).some(v => v) ? 'text-primary' : 'text-textSecondary hover:text-white'}`}
-            title="Efectos de Audio"
+            onClick={toggleAutoplay} 
+            className={`transition ${autoplay ? 'text-primary' : 'text-textSecondary hover:text-white'}`}
+            title="Modo Radio (Autoplay)"
           >
-            <Sparkles size={18} />
+            <Radio size={18} />
           </button>
-          
+
           <button 
-            className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 transition shadow-md"
             onClick={paused ? play : pause}
+            className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 transition shadow-md"
           >
             {paused ? <Play size={18} className="ml-1" /> : <Pause size={18} />}
           </button>
@@ -177,41 +177,6 @@ export default function BottomPlayer() {
             <SkipForward size={20} />
           </button>
         </div>
-
-        {/* Filters Menu Overlay */}
-        {showFilters && (
-            <div className="absolute bottom-24 left-1/2 -translate-x-1/2 bg-surfaceHighlight/95 backdrop-blur-xl border border-white/10 p-4 rounded-2xl shadow-2xl w-64 z-[100] animate-in fade-in slide-in-from-bottom-4 duration-200">
-                <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-white font-bold flex items-center gap-2">
-                        <Sparkles size={16} className="text-primary" /> Efectos
-                    </h4>
-                    <button onClick={() => setShowFilters(false)} className="text-textSecondary hover:text-white">
-                        <X size={16} />
-                    </button>
-                </div>
-                <div className="grid gap-2">
-                    {[
-                        { id: 'bassboost', label: 'Bass Boost', desc: 'Potencia los bajos' },
-                        { id: 'nightcore', label: 'Nightcore', desc: 'Velocidad y agudos' },
-                        { id: 'vaporwave', label: 'Vaporwave', desc: 'Lento y relajado' },
-                        { id: '8d', label: '8D Audio', desc: 'Sonido envolvente' }
-                    ].map(f => (
-                        <button
-                            key={f.id}
-                            onClick={() => toggleFilter(f.id)}
-                            className={`flex flex-col items-start p-3 rounded-xl transition-all border ${
-                                filters?.[f.id] 
-                                ? 'bg-primary/20 border-primary/40 text-white' 
-                                : 'bg-white/5 border-transparent text-textSecondary hover:bg-white/10 hover:text-white'
-                            }`}
-                        >
-                            <span className="text-sm font-semibold">{f.label}</span>
-                            <span className="text-[10px] opacity-60">{f.desc}</span>
-                        </button>
-                    ))}
-                </div>
-            </div>
-        )}
 
         {/* Progress bar */}
         <div className="w-full flex items-center gap-2 text-xs text-textSecondary font-mono group">
@@ -243,30 +208,72 @@ export default function BottomPlayer() {
          </div>
        </div>
  
-       {/* Right: Volume */}
-       <div className="hidden md:flex w-[30%] min-w-[180px] justify-end items-center gap-2 text-textSecondary pr-4">
-         <Volume2 size={20} />
-         <div className="w-24 group relative flex items-center h-4">
-            {/* Visual Background */}
-            <div className="absolute w-full h-1 bg-surfaceHighlight rounded-full shadow-inner"></div>
-            {/* Visual Progress */}
-            <div 
-                className="absolute h-1 bg-primary rounded-full group-hover:bg-pink-400 transition-colors pointer-events-none"
-                style={{ width: `${localVolume}%` }}
-            />
-            {/* Real Input */}
-            <input 
-              type="range" 
-              min="0" max="100" 
-              value={localVolume}
-              onMouseDown={() => setIsDraggingVolume(true)}
-              onMouseUp={() => setIsDraggingVolume(false)}
-              onTouchStart={() => setIsDraggingVolume(true)}
-              onTouchEnd={() => setIsDraggingVolume(false)}
-              onChange={handleVolumeChange}
-              className="absolute w-full h-4 opacity-0 cursor-pointer accent-primary"
-            />
-         </div>
+       {/* Right: Volume & Extra Controls */}
+       <div className="hidden md:flex w-[30%] min-w-[200px] justify-end items-center gap-4 text-textSecondary pr-6 relative">
+          <button 
+            onClick={() => setShowFilters(!showFilters)} 
+            className={`transition ${showFilters || Object.values(filters || {}).some(v => v) ? 'text-primary' : 'hover:text-white'}`}
+            title="Efectos de Audio"
+          >
+            <Sparkles size={18} />
+          </button>
+
+          <div className="flex items-center gap-2 flex-1 max-w-[150px]">
+            <Volume2 size={20} />
+            <div className="flex-1 group relative flex items-center h-4">
+                <div className="absolute w-full h-1 bg-surfaceHighlight rounded-full shadow-inner"></div>
+                <div 
+                    className="absolute h-1 bg-primary rounded-full group-hover:bg-pink-400 transition-colors pointer-events-none"
+                    style={{ width: `${localVolume}%` }}
+                />
+                <input 
+                  type="range" 
+                  min="0" max="100" 
+                  value={localVolume}
+                  onMouseDown={() => setIsDraggingVolume(true)}
+                  onMouseUp={() => setIsDraggingVolume(false)}
+                  onTouchStart={() => setIsDraggingVolume(true)}
+                  onTouchEnd={() => setIsDraggingVolume(false)}
+                  onChange={handleVolumeChange}
+                  className="absolute w-full h-4 opacity-0 cursor-pointer accent-primary"
+                />
+            </div>
+          </div>
+
+          {/* Filters Menu Overlay (Positioned above the button) */}
+          {showFilters && (
+              <div className="absolute bottom-16 right-0 bg-surfaceHighlight/95 backdrop-blur-xl border border-white/10 p-4 rounded-2xl shadow-2xl w-60 z-[100] animate-in fade-in slide-in-from-bottom-4 duration-200">
+                  <div className="flex items-center justify-between mb-4">
+                      <h4 className="text-white font-bold flex items-center gap-2">
+                          <Sparkles size={16} className="text-primary" /> Efectos
+                      </h4>
+                      <button onClick={() => setShowFilters(false)} className="text-textSecondary hover:text-white">
+                          <X size={16} />
+                      </button>
+                  </div>
+                  <div className="grid gap-2">
+                      {[
+                          { id: 'bassboost', label: 'Bass Boost', desc: 'Potencia los bajos' },
+                          { id: 'nightcore', label: 'Nightcore', desc: 'Velocidad y agudos' },
+                          { id: 'vaporwave', label: 'Vaporwave', desc: 'Lento y relajado' },
+                          { id: '8d', label: '8D Audio', desc: 'Sonido envolvente' }
+                      ].map(f => (
+                          <button
+                              key={f.id}
+                              onClick={() => toggleFilter(f.id)}
+                              className={`flex flex-col items-start p-3 rounded-xl transition-all border ${
+                                  filters?.[f.id] 
+                                  ? 'bg-primary/20 border-primary/40 text-white' 
+                                  : 'bg-white/5 border-transparent text-textSecondary hover:bg-white/10 hover:text-white'
+                              }`}
+                          >
+                              <span className="text-sm font-semibold">{f.label}</span>
+                              <span className="text-[10px] opacity-60">{f.desc}</span>
+                          </button>
+                      ))}
+                  </div>
+              </div>
+          )}
        </div>
      </div>
   );
