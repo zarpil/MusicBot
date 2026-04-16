@@ -90,8 +90,18 @@ function parseLRC(lrc) {
  */
 async function getLyricsFromLRCLIB(artist, title, durationMs) {
     const durationSec = durationMs ? Math.round(durationMs / 1000) : null;
-    const cleanTitle = cleanName(title);
-    const cleanArtist = cleanName(artist);
+    let cleanArtist = cleanName(artist);
+    let cleanTitle = cleanName(title);
+    
+    // Strategy: Remove redundant artist name from title (e.g., "Nadal015 - Nadal015 Streetshark")
+    if (cleanTitle.toLowerCase().includes(cleanArtist.toLowerCase())) {
+        const regex = new RegExp(cleanArtist.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'gi');
+        cleanTitle = cleanTitle.replace(regex, '').trim();
+        // Remove any leading/trailing dashes or symbols left after removal
+        cleanTitle = cleanTitle.replace(/^[^a-z0-9]+|[^a-z0-9]+$/gi, '').trim();
+        // If we emptied the title, revert to original cleanTitle
+        if (!cleanTitle) cleanTitle = cleanName(title);
+    }
     
     // Strategy 1: Strict Get
     try {
