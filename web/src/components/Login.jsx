@@ -64,7 +64,7 @@ export default function Login() {
           <button 
             type="submit" 
             disabled={loading || pin.length !== 6}
-            className="w-full bg-primary hover:bg-green-500 text-black font-bold text-lg py-4 rounded-xl flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-primary/20 -translate-y-0.5 hover:-translate-y-1 active:translate-y-0"
+            className="w-full bg-primary hover:bg-pink-500 text-black font-bold text-lg py-4 rounded-xl flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-primary/20 -translate-y-0.5 hover:-translate-y-1 active:translate-y-0"
           >
             {loading ? <Loader2 className="animate-spin" size={24} /> : (
               <>Entrar <ArrowRight size={20} /></>

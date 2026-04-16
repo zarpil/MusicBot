@@ -79,7 +79,7 @@ export default function Queue() {
             <>
               <button 
                 onClick={handleSavePlaylist}
-                className="flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold text-primary hover:text-green-400 transition-colors px-2 py-1 rounded-md hover:bg-primary/10"
+                className="flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold text-primary hover:text-pink-400 transition-colors px-2 py-1 rounded-md hover:bg-primary/10"
               >
                 <Library size={12} /> Guardar
               </button>

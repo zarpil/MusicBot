@@ -10,8 +10,24 @@ module.exports = {
 
     if (interaction.isButton()) {
         const { getManager } = require('../../lavalink/manager');
+        const authStore = require('../utils/authStore');
         const manager = getManager();
-        const player = manager.players.get(interaction.guildId);
+        let player = manager.players.get(interaction.guildId);
+
+        // Special case for WEB button: don't require an active player to get the PIN
+        if (interaction.customId === 'PLAYER_WEB') {
+            const pin = authStore.createPinForUser(interaction.user);
+            const domain = process.env.PUBLIC_URL || 'https://tussi.zarpil.dev';
+            
+            return interaction.reply({
+                content: `🔐 **Acceso al Panel Web**\n\n` +
+                        `Para controlar la música desde tu navegador, entra a:\n` +
+                        `**${domain}**\n\n` +
+                        `Tu código PIN secreto es: \`${pin}\`\n` +
+                        `*(Expira en 5 minutos)*`,
+                ephemeral: true
+            });
+        }
 
         if (!player) return interaction.reply({ content: '❌ El reproductor no está activo.', ephemeral: true });
 

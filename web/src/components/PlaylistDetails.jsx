@@ -228,7 +228,7 @@ export default function PlaylistDetails({ playlistId, onBack }) {
                         <div className="flex items-center gap-4 ml-auto">
                             <button 
                                 onClick={handlePlayAll}
-                                className="bg-primary hover:bg-green-400 text-black px-8 py-3 rounded-full font-bold flex items-center gap-2 transition-all hover:scale-105 shadow-lg shadow-primary/20"
+                                className="bg-primary hover:bg-pink-400 text-black px-8 py-3 rounded-full font-bold flex items-center gap-2 transition-all hover:scale-105 shadow-lg shadow-primary/20"
                             >
                                 <Play size={20} className="fill-black" /> REPRODUCIR TODO
                             </button>
@@ -430,7 +430,7 @@ export default function PlaylistDetails({ playlistId, onBack }) {
                                         </button>
                                         <button 
                                             onClick={() => handleAddToPlaylist(track)}
-                                            className="px-5 py-2 bg-primary hover:bg-green-400 text-black rounded-full text-xs font-bold transition-all flex items-center gap-2 transform active:scale-95 shadow-lg shadow-primary/10"
+                                            className="px-5 py-2 bg-primary hover:bg-pink-400 text-black rounded-full text-xs font-bold transition-all flex items-center gap-2 transform active:scale-95 shadow-lg shadow-primary/10"
                                         >
                                             <Plus size={14} /> AÑADIR
                                         </button>

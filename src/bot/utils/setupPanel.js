@@ -10,7 +10,7 @@ const db = require('../../db/database');
 function getSetupEmbed(player) {
     const embed = new EmbedBuilder()
         .setTitle('🎵 REPRODUCTOR DE MÚSICA')
-        .setColor(player?.playing ? 0x2f3136 : 0x2b2d31)
+        .setColor(0xeb40a9) // Tussi Pink
         .setImage('https://i.imgur.com/JughdYl.jpeg');
 
     if (player && player.queue.current) {
@@ -80,7 +80,12 @@ function getSetupButtons(player) {
             .setCustomId('PLAYER_VOL_UP')
             .setEmoji('🔊')
             .setStyle(ButtonStyle.Secondary)
-            .setDisabled(!player)
+            .setDisabled(!player),
+        new ButtonBuilder()
+            .setCustomId('PLAYER_WEB')
+            .setEmoji('🌐')
+            .setLabel('Web')
+            .setStyle(ButtonStyle.Secondary)
     );
 
     return [row1, row2];

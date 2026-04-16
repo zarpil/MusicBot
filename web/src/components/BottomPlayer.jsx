@@ -174,45 +174,55 @@ export default function BottomPlayer() {
           <div className="flex-1 relative flex items-center h-4">
              {/* Visual Background */}
              <div className="absolute w-full h-1 bg-surfaceHighlight rounded-full shadow-inner"></div>
-             {/* Visual Progress */}
-             <div 
-               className="absolute h-1 bg-primary rounded-full group-hover:bg-green-400 transition-colors pointer-events-none"
-               style={{ width: `${Math.min(progressPercent, 100)}%` }}
-             />
-             {/* Hidden Real Input for Interaction */}
-             <input 
-               type="range"
-               min="0"
-               max={current.duration || 100}
-               value={currentPosition}
-               onMouseDown={handleSeekStart}
-               onInput={handleSeekChange}
-               onMouseUp={handleSeekEnd}
-               onTouchStart={handleSeekStart}
-               onTouchEnd={handleSeekEnd}
-               className="absolute w-full h-4 opacity-0 cursor-pointer accent-primary"
-               disabled={current.isStream}
-             />
-          </div>
-          <span className="w-10">{current.isStream ? 'LIVE' : formatTime(current.duration)}</span>
-        </div>
-      </div>
-
-      {/* Right: Volume */}
-      <div className="hidden md:flex w-[30%] min-w-[180px] justify-end items-center gap-2 text-textSecondary pr-4">
-        <Volume2 size={20} />
-        <input 
-          type="range" 
-          min="0" max="100" 
-          value={localVolume}
-          onMouseDown={() => setIsDraggingVolume(true)}
-          onMouseUp={() => setIsDraggingVolume(false)}
-          onTouchStart={() => setIsDraggingVolume(true)}
-          onTouchEnd={() => setIsDraggingVolume(false)}
-          onChange={handleVolumeChange}
-          className="w-24 h-1 bg-surfaceHighlight rounded-full appearance-none cursor-pointer accent-white hover:accent-primary transition"
-        />
-      </div>
-    </div>
+              {/* Visual Progress */}
+              <div 
+                className="absolute h-1 bg-primary rounded-full group-hover:bg-pink-400 transition-colors pointer-events-none"
+                style={{ width: `${Math.min(progressPercent, 100)}%` }}
+              />
+              {/* Hidden Real Input for Interaction */}
+              <input 
+                type="range"
+                min="0"
+                max={current.duration || 100}
+                value={currentPosition}
+                onMouseDown={handleSeekStart}
+                onInput={handleSeekChange}
+                onMouseUp={handleSeekEnd}
+                onTouchStart={handleSeekStart}
+                onTouchEnd={handleSeekEnd}
+                className="absolute w-full h-4 opacity-0 cursor-pointer accent-primary"
+                disabled={current.isStream}
+              />
+           </div>
+           <span className="w-10">{current.isStream ? 'LIVE' : formatTime(current.duration)}</span>
+         </div>
+       </div>
+ 
+       {/* Right: Volume */}
+       <div className="hidden md:flex w-[30%] min-w-[180px] justify-end items-center gap-2 text-textSecondary pr-4">
+         <Volume2 size={20} />
+         <div className="w-24 group relative flex items-center h-4">
+            {/* Visual Background */}
+            <div className="absolute w-full h-1 bg-surfaceHighlight rounded-full shadow-inner"></div>
+            {/* Visual Progress */}
+            <div 
+                className="absolute h-1 bg-primary rounded-full group-hover:bg-pink-400 transition-colors pointer-events-none"
+                style={{ width: `${localVolume}%` }}
+            />
+            {/* Real Input */}
+            <input 
+              type="range" 
+              min="0" max="100" 
+              value={localVolume}
+              onMouseDown={() => setIsDraggingVolume(true)}
+              onMouseUp={() => setIsDraggingVolume(false)}
+              onTouchStart={() => setIsDraggingVolume(true)}
+              onTouchEnd={() => setIsDraggingVolume(false)}
+              onChange={handleVolumeChange}
+              className="absolute w-full h-4 opacity-0 cursor-pointer accent-primary"
+            />
+         </div>
+       </div>
+     </div>
   );
 }
