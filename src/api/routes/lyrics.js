@@ -237,4 +237,44 @@ router.get('/', async (req, res) => {
     res.json(result);
 });
 
+router.get('/search', async (req, res) => {
+    const { q } = req.query;
+    if (!q) return res.status(400).json({ error: 'Search query is required' });
+
+    try {
+        const axiosConfig = {
+            headers: { 'User-Agent': 'TussiMusicBot/3.0 (ManualSearcher)' },
+            timeout: 5000
+        };
+        const searchRes = await axios.get('https://lrclib.net/api/search', {
+            ...axiosConfig,
+            params: { q }
+        });
+
+        const results = (searchRes.data || []).map(item => ({
+            id: item.id,
+            trackName: item.trackName,
+            artistName: item.artistName,
+            albumName: item.albumName,
+            duration: item.duration,
+            instrumental: !item.plainLyrics && !item.syncedLyrics,
+            hasSynced: !!item.syncedLyrics,
+            // We include the data so the frontend can select it immediately
+            data: {
+                id: item.id,
+                trackName: item.trackName,
+                artistName: item.artistName,
+                plainLyrics: item.plainLyrics,
+                syncedLyrics: parseLRC(item.syncedLyrics),
+                isInstrumental: !item.plainLyrics && !item.syncedLyrics
+            }
+        }));
+
+        res.json(results);
+    } catch (err) {
+        console.error('[Lyrics/Search] Error:', err.message);
+        res.status(500).json({ error: 'Error searching lyrics' });
+    }
+});
+
 module.exports = router;
