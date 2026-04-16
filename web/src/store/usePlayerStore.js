@@ -110,6 +110,7 @@ const usePlayerStore = create((set, get) => ({
   moveTrack: (fromIndex, toIndex) => get().sendCommand('MOVE_TRACK', { fromIndex, toIndex }),
   jumpToTrack: (index) => get().sendCommand('JUMP_TO_TRACK', { index }),
   clearQueue: () => get().sendCommand('CLEAR_QUEUE'),
+  toggleFilter: (filterName) => get().sendCommand('TOGGLE_FILTER', { filterName }),
 }));
 
 export default usePlayerStore;

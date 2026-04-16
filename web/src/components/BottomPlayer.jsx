@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Play, Pause, SkipForward, Volume2, Radio, Heart } from 'lucide-react';
+import { Play, Pause, SkipForward, Volume2, Radio, Heart, Sparkles, X } from 'lucide-react';
 import axios from 'axios';
 import usePlayerStore from '../store/usePlayerStore';
 
@@ -12,9 +12,10 @@ function formatTime(ms) {
 }
 
 export default function BottomPlayer() {
-  const { active, paused, volume, position, autoplay, current, loading } = usePlayerStore(state => state.state);
-  const { play, pause, skip, setVolume, toggleAutoplay, seek } = usePlayerStore();
+  const { play, pause, skip, setVolume, toggleAutoplay, seek, toggleFilter } = usePlayerStore();
+  const { active, paused, volume, position, autoplay, current, loading, filters } = usePlayerStore(state => state.state);
 
+  const [showFilters, setShowFilters] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [dragValue, setDragValue] = useState(0);
   
@@ -158,6 +159,14 @@ export default function BottomPlayer() {
           </button>
           
           <button 
+            onClick={() => setShowFilters(!showFilters)} 
+            className={`transition ${showFilters || Object.values(filters || {}).some(v => v) ? 'text-primary' : 'text-textSecondary hover:text-white'}`}
+            title="Efectos de Audio"
+          >
+            <Sparkles size={18} />
+          </button>
+          
+          <button 
             className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 transition shadow-md"
             onClick={paused ? play : pause}
           >
@@ -168,6 +177,41 @@ export default function BottomPlayer() {
             <SkipForward size={20} />
           </button>
         </div>
+
+        {/* Filters Menu Overlay */}
+        {showFilters && (
+            <div className="absolute bottom-24 left-1/2 -translate-x-1/2 bg-surfaceHighlight/95 backdrop-blur-xl border border-white/10 p-4 rounded-2xl shadow-2xl w-64 z-[100] animate-in fade-in slide-in-from-bottom-4 duration-200">
+                <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-white font-bold flex items-center gap-2">
+                        <Sparkles size={16} className="text-primary" /> Efectos
+                    </h4>
+                    <button onClick={() => setShowFilters(false)} className="text-textSecondary hover:text-white">
+                        <X size={16} />
+                    </button>
+                </div>
+                <div className="grid gap-2">
+                    {[
+                        { id: 'bassboost', label: 'Bass Boost', desc: 'Potencia los bajos' },
+                        { id: 'nightcore', label: 'Nightcore', desc: 'Velocidad y agudos' },
+                        { id: 'vaporwave', label: 'Vaporwave', desc: 'Lento y relajado' },
+                        { id: '8d', label: '8D Audio', desc: 'Sonido envolvente' }
+                    ].map(f => (
+                        <button
+                            key={f.id}
+                            onClick={() => toggleFilter(f.id)}
+                            className={`flex flex-col items-start p-3 rounded-xl transition-all border ${
+                                filters?.[f.id] 
+                                ? 'bg-primary/20 border-primary/40 text-white' 
+                                : 'bg-white/5 border-transparent text-textSecondary hover:bg-white/10 hover:text-white'
+                            }`}
+                        >
+                            <span className="text-sm font-semibold">{f.label}</span>
+                            <span className="text-[10px] opacity-60">{f.desc}</span>
+                        </button>
+                    ))}
+                </div>
+            </div>
+        )}
 
         {/* Progress bar */}
         <div className="w-full flex items-center gap-2 text-xs text-textSecondary font-mono group">

@@ -37,6 +37,7 @@ function serializePlayer(player) {
     volume:   player.volume,
     position: player.position,
     autoplay: player.get('autoplay') ?? false,
+    filters:  player.get('activeFilters') || {},
     current:  serializeTrack(player.queue.current),
     queue:    (player.queue.tracks || []).map(serializeTrack),
   };

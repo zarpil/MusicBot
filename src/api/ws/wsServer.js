@@ -4,6 +4,8 @@ const WebSocket = require('ws');
 const db = require('../../db/database');
 const { serializePlayer, serializeTrack } = require('../../utils/playerSerializers');
 const { ensurePlayer } = require('../../bot/utils/voiceUtils');
+const { toggleFilter } = require('../../lavalink/filterPresets');
+const { getManager } = require('../../lavalink/manager');
 const { syncState } = require('../../utils/stateSync');
 
 /** guild ID → Set<WebSocket> */
@@ -122,6 +124,13 @@ function initWsServer(httpServer, getManager, discordClient) {
               const newState = !player.get('autoplay');
               player.set('autoplay', newState);
               db.setAutoplay(guildId, newState); // Persist in DB
+              syncState(discordClient, player);
+            }
+            break;
+
+          case 'TOGGLE_FILTER':
+            if (player && msg.filterName) {
+              await toggleFilter(player, msg.filterName);
               syncState(discordClient, player);
             }
             break;
