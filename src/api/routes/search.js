@@ -80,19 +80,23 @@ router.get('/', async (req, res) => {
 
       // Clamp params within Spotify's allowed ranges
       const spotifyLimit  = Math.min(50, Math.max(1, Number(limit) || 20));
-      const spotifyOffset = Math.min(1000, Math.max(0, Number(offset) || 0));
+      const spotifyOffset = Math.min(950, Math.max(0, Number(offset) || 0));
       
-      console.log(`[Spotify] Searching: q="${q}" limit=${spotifyLimit} offset=${spotifyOffset}`);
+      // Build URL manually - avoid Axios serialization issues
+      const spotifyParams = new URLSearchParams();
+      spotifyParams.set('q', q);
+      spotifyParams.set('type', 'track');
+      spotifyParams.set('limit', spotifyLimit);
+      spotifyParams.set('offset', spotifyOffset);
+      
+      const spotifyUrl = `https://api.spotify.com/v1/search?${spotifyParams.toString()}`;
+      console.log(`[Spotify] Request URL: ${spotifyUrl}`);
 
-      const response = await axios.get('https://api.spotify.com/v1/search', {
-        params: { 
-          q, 
-          type: 'track', 
-          limit: spotifyLimit, 
-          offset: spotifyOffset, 
-          market: 'ES' 
+      const response = await axios.get(spotifyUrl, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
         },
-        headers: { Authorization: `Bearer ${token}` },
       });
 
       const tracks = response.data.tracks.items.map(t => ({
@@ -102,7 +106,6 @@ router.get('/', async (req, res) => {
         uri: t.external_urls.spotify,
         artworkUrl: t.album.images[0]?.url || null,
         duration: t.duration_ms,
-        // We include a generic search query to help lavalink find it on YT later
         _searchQuery: `ytmsearch:${t.artists[0]?.name} ${t.name}`,
       }));
 
