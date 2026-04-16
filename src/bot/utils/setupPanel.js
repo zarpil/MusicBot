@@ -28,14 +28,14 @@ function getSetupEmbed(player) {
                 .join('\n');
             embed.addFields({ name: '📜 Siguientes en la cola', value: nextTracks });
         }
-        
+
         const status = player.paused ? '⏸️ PAUSADO' : '▶️ SONANDO';
         const autoplay = player.get('autoplay') ? '✅ ON' : '❌ OFF';
         embed.setFooter({ text: `Estado: ${status} | Volumen: ${player.volume}% | Autoplay: ${autoplay}` });
     } else {
         embed.setDescription('No hay nada sonando ahora mismo.\n\nEscribe el **nombre de una canción** o una **URL** aquí abajo para empezar a reproducir.')
             .setImage('https://i.imgur.com/B7y7vXn.png') // A placeholder professional music banner
-            .setFooter({ text: 'Sistema de música premium | Tussi Music' });
+            .setFooter({ text: 'Tussi Music | By @p0u' });
     }
 
     return embed;
