@@ -165,6 +165,21 @@ function initWsServer(httpServer, getManager, discordClient) {
                 
                 let trackToLoad = (res && res.tracks && res.tracks.length > 0) ? res.tracks[0] : null;
 
+                // Special fallback for Spotify: if it's a Spotify link and direct resolve fails, 
+                // search for metadata on YouTube
+                if (!trackToLoad && (query.includes('spotify.com') || query.includes('spotify:'))) {
+                  const metadataQuery = `ytmsearch:${msg.track.author} ${msg.track.title}`;
+                  console.warn(`[WS] Spotify resolve failed. Falling back to metadata search: ${metadataQuery}`);
+                  try {
+                    const fallbackRes = await player.search(metadataQuery, requester);
+                    if (fallbackRes && fallbackRes.tracks && fallbackRes.tracks.length > 0) {
+                      trackToLoad = fallbackRes.tracks[0];
+                    }
+                  } catch (fallbackErr) {
+                    console.error(`[WS] Spotify fallback also failed:`, fallbackErr.message);
+                  }
+                }
+
                 // Fallback for YouTube: if direct resolve fails OR errors out, try ytmsearch
                 if (!trackToLoad && (query.includes('youtube.com') || query.includes('youtu.be') || query.startsWith('ytsearch'))) {
                    const q = query.replace('ytsearch:', '');
