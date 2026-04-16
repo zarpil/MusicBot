@@ -381,5 +381,6 @@ export default function Search({ guildId }) {
                 )}
             </div>
         </div>
+    </div>
     );
 }
