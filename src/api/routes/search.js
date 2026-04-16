@@ -1,7 +1,7 @@
 'use strict';
 
 const { Router } = require('express');
-const axios      = require('axios');
+const axios = require('axios');
 
 const router = Router();
 
@@ -47,7 +47,7 @@ async function getSpotifyToken() {
 
   try {
     console.log('[Spotify] Fetching new access token...');
-    
+
     const params = new URLSearchParams();
     params.append('grant_type', 'client_credentials');
 
@@ -68,7 +68,7 @@ async function getSpotifyToken() {
       console.log('[Spotify] Token refreshed successfully');
       return spotifyToken;
     }
-    
+
     console.error('[Spotify] No access token in response:', response.data);
     return null;
   } catch (err) {
@@ -84,11 +84,11 @@ async function getSpotifyToken() {
 router.get('/', async (req, res) => {
   const q = (req.query.q || '').trim();
   const source = req.query.source || 'youtube';
-  
+
   let limit = parseInt(req.query.limit, 10);
   if (isNaN(limit) || limit < 1) limit = 20;
   if (limit > 50) limit = 50;
-  
+
   let offset = parseInt(req.query.offset, 10);
   if (isNaN(offset) || offset < 0) offset = 0;
 
@@ -106,7 +106,7 @@ router.get('/', async (req, res) => {
         // If it's a Spotify URL (track, playlist, album), resolve it directly via LavaSrc
         const isSpotifyUrl = q.includes('spotify.com') || q.startsWith('spotify:');
         const lavalinkQuery = isSpotifyUrl ? q : `spsearch:${q}`;
-        
+
         const cacheKey = `lavasrc:${lavalinkQuery}`;
         const cached = getCachedSpotify(cacheKey);
         if (cached) {
@@ -118,7 +118,7 @@ router.get('/', async (req, res) => {
           console.log(`[Spotify/LavaSrc] Searching: ${lavalinkQuery}`);
           const result = await node.search(lavalinkQuery, { username: 'Dashboard', id: '0' });
           console.log(`[Spotify/LavaSrc] Result Type: ${result?.loadType}, Tracks: ${result?.tracks?.length || 0}`);
-          
+
           if (result && result.tracks && result.tracks.length > 0) {
             console.log('[Spotify/LavaSrc] Raw Top Results:', JSON.stringify(result.tracks.slice(0, 2), null, 2));
             const tracks = result.tracks.map(t => ({
@@ -132,7 +132,7 @@ router.get('/', async (req, res) => {
             }));
 
             setCachedSpotify(cacheKey, tracks);
-            
+
             // For playlist/album loads, return all tracks
             if (result.loadType === 'playlist' || result.loadType === 'PLAYLIST_LOADED') {
               const listName = result.playlist?.name || result.playlist?.title || 'Lista de Spotify';
@@ -153,9 +153,9 @@ router.get('/', async (req, res) => {
 
       // Clamp params within Spotify's allowed ranges
       // NOTE: Spotify's Feb 2026 update caps limit to 10 for Development Mode apps
-      const spotifyLimit  = Math.min(10, Math.max(1, Number(limit) || 10));
+      const spotifyLimit = Math.min(10, Math.max(1, Number(limit) || 10));
       const spotifyOffset = Math.min(950, Math.max(0, Number(offset) || 0));
-      
+
       // Check cache before hitting the API
       const cacheKey = `${q}:${spotifyLimit}:${spotifyOffset}`;
       const cached = getCachedSpotify(cacheKey);
@@ -167,15 +167,15 @@ router.get('/', async (req, res) => {
       // Build URL manually - avoid Axios serialization issues
       const spotifyParams = new URLSearchParams();
       spotifyParams.set('q', q);
-      spotifyParams.set('type', 'track');
+      spotifyParams.set('type', 'track', "album", "playlist", "artist", "show");
       spotifyParams.set('limit', spotifyLimit);
       spotifyParams.set('offset', spotifyOffset);
-      
+
       const spotifyUrl = `https://api.spotify.com/v1/search?${spotifyParams.toString()}`;
       console.log(`[Spotify] Direct API fallback: ${spotifyUrl}`);
 
       const response = await axios.get(spotifyUrl, {
-        headers: { 
+        headers: {
           Authorization: `Bearer ${token}`,
           Accept: 'application/json',
         },
@@ -205,7 +205,7 @@ router.get('/', async (req, res) => {
 
     // If it's a URL, no prefix
     const query = q.startsWith('http') ? q : `${searchPrefix}:${q}`;
-    
+
     // We need a dummy requester, standard Lavalink-client usage
     if (!manager || !manager.nodeManager) {
       return res.status(500).json({ error: 'Lavalink Manager not initialized' });
@@ -215,13 +215,13 @@ router.get('/', async (req, res) => {
     if (!nodes || nodes.size === 0) {
       return res.status(500).json({ error: 'No Lavalink nodes connected' });
     }
-    
+
     const node = [...nodes.values()][0];
     if (!node) return res.status(500).json({ error: 'No active Lavalink node' });
 
     console.log(`[API] Searching YouTube for: "${query}" using node: ${node.id}`);
     let result = null;
-    
+
     try {
       result = await node.search(query, 'dashboard');
     } catch (err) {
@@ -262,16 +262,16 @@ router.get('/', async (req, res) => {
       console.error('[Spotify] API Error Details:', JSON.stringify(err.response.data.error, null, 2));
     }
     console.error(`[API] Search CRASH for "${req.query.q}":`, err.message);
-    
+
     if (spotifyStatus === 429) {
       console.warn(`[Spotify] Rate limit hit (429). Returning temporary empty results.`);
-      return res.json({ 
-        loadType: 'search', 
-        tracks: [], 
-        error: 'Spotify está limitando las peticiones. Prueba de nuevo en unos minutos.' 
+      return res.json({
+        loadType: 'search',
+        tracks: [],
+        error: 'Spotify está limitando las peticiones. Prueba de nuevo en unos minutos.'
       });
     }
-    
+
     res.status(500).json({ error: 'Error interno al buscar. Revisa la consola del servidor.' });
 
   }
