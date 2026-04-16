@@ -7,20 +7,6 @@ module.exports = {
   async execute(interaction, client) {
     if (!interaction.isChatInputCommand() && !interaction.isAutocomplete() && !interaction.isButton()) return;
 
-    const command = client.commands.get(interaction.commandName);
-    if (!command) return;
-
-    if (interaction.isAutocomplete()) {
-      if (typeof command.autocomplete === 'function') {
-        try {
-          await command.autocomplete(interaction);
-        } catch (err) {
-          console.error(`[Bot] Error during autocomplete for ${interaction.commandName}:`, err);
-        }
-      }
-      return;
-    }
-
     if (interaction.isButton()) {
         const { getManager } = require('../../lavalink/manager');
         const manager = getManager();
@@ -65,6 +51,11 @@ module.exports = {
         }
         return;
     }
+
+    const command = client.commands.get(interaction.commandName);
+    if (!command) return;
+
+    if (interaction.isAutocomplete()) {
 
     try {
       await command.execute(interaction);
