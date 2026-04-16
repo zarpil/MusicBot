@@ -151,8 +151,11 @@ router.get('/', async (req, res) => {
     console.log(`[API] Search successful, found ${tracks.length} tracks`);
     res.json({ loadType: result.loadType, tracks: tracks.slice(0, limit) });
   } catch (err) {
-    console.error(`[API] Search CRASH for "${req.query.q}":`, err);
-    res.status(500).json({ error: 'Error interno al buscar la canción. Inténtalo de nuevo.' });
+    if (err.response?.data?.error) {
+      console.error('[Spotify] API Error Details:', JSON.stringify(err.response.data.error, null, 2));
+    }
+    console.error(`[API] Search CRASH for "${req.query.q}":`, err.message);
+    res.status(500).json({ error: 'Error interno al buscar la canción en Spotify. Revisa la consola.' });
   }
 });
 

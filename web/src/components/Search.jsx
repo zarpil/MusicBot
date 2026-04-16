@@ -26,6 +26,7 @@ export default function Search({ guildId }) {
     const [offset, setOffset] = useState(0);
     const [hasMore, setHasMore] = useState(true);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [error, setError] = useState(null);
     const dropdownRef = useRef(null);
     const loadMoreRef = useRef(null);
     const [favUris, setFavUris] = useState(new Set());
@@ -118,6 +119,7 @@ export default function Search({ guildId }) {
             });
             
             const newTracks = res.data.tracks || [];
+            setError(null);
             
             if (isInitial) {
                 setResults(newTracks);
@@ -140,6 +142,8 @@ export default function Search({ guildId }) {
 
         } catch (err) {
             console.error('Search error:', err);
+            setError('Error al buscar resultados. Revisa la configuración de la API.');
+            setHasMore(false); // Stop infinite loop on error
             if (isInitial) setResults([]);
         } finally {
             setLoading(false);
@@ -239,7 +243,19 @@ export default function Search({ guildId }) {
                     </div>
                 )}
                 
-                {!loading && results.length === 0 && query && (
+                {error && (
+                    <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-2xl text-center text-sm">
+                        {error}
+                        <button 
+                            onClick={() => performSearch(true)} 
+                            className="block mx-auto mt-2 underline hover:text-red-300"
+                        >
+                            Reintentar
+                        </button>
+                    </div>
+                )}
+
+                {!loading && results.length === 0 && query && !error && (
                     <div className="text-center p-12 text-textSecondary italic">
                         No se han encontrado resultados para "{query}"
                     </div>
