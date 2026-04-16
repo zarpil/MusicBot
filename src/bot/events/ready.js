@@ -15,9 +15,13 @@ module.exports = {
     manager.init(client.user.id);
     console.log('[Bot] LavalinkManager initialised');
 
-    // Sync guilds to DB on startup
+    // Sync guilds to DB on startup and refresh setup panels
+    const { updateSetupPanel } = require('../utils/setupPanel');
     for (const [id, guild] of client.guilds.cache) {
       db.upsertGuild(id, { name: guild.name });
+      
+      // Reset setup panel to "Idle" state on start
+      updateSetupPanel(client, id, null);
     }
   },
 };
