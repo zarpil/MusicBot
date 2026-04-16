@@ -5,9 +5,32 @@ const axios      = require('axios');
 
 const router = Router();
 
-// Spotify token cache
+// ── Spotify token cache ──────────────────────────────────────────────────────
 let spotifyToken = null;
 let spotifyTokenExpiresAt = 0;
+
+// ── Spotify results cache (30s TTL to avoid rate limits in Dev Mode) ─────────
+const spotifyCache = new Map();
+const SPOTIFY_CACHE_TTL_MS = 30_000;
+
+function getCachedSpotify(key) {
+  const entry = spotifyCache.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) {
+    spotifyCache.delete(key);
+    return null;
+  }
+  return entry.data;
+}
+
+function setCachedSpotify(key, data) {
+  spotifyCache.set(key, { data, expiresAt: Date.now() + SPOTIFY_CACHE_TTL_MS });
+  // Cleanup old entries to avoid memory leak
+  if (spotifyCache.size > 100) {
+    const firstKey = spotifyCache.keys().next().value;
+    spotifyCache.delete(firstKey);
+  }
+}
 
 async function getSpotifyToken() {
   const clientId = process.env.SPOTIFY_CLIENT_ID;
@@ -75,6 +98,52 @@ router.get('/', async (req, res) => {
 
   try {
     if (source === 'spotify') {
+      // ── Strategy 1: Use LavaSrc via Lavalink (resolves Spotify natively with ISRC matching)
+      const nodes = manager?.nodeManager?.nodes;
+      const node = nodes && nodes.size > 0 ? [...nodes.values()][0] : null;
+
+      if (node) {
+        // If it's a Spotify URL (track, playlist, album), resolve it directly via LavaSrc
+        const isSpotifyUrl = q.includes('spotify.com') || q.startsWith('spotify:');
+        const lavalinkQuery = isSpotifyUrl ? q : `spsearch:${q}`;
+        
+        const cacheKey = `lavasrc:${lavalinkQuery}`;
+        const cached = getCachedSpotify(cacheKey);
+        if (cached) {
+          console.log(`[Spotify] Cache hit for "${q}"`);
+          return res.json({ loadType: 'search', tracks: cached });
+        }
+
+        try {
+          console.log(`[Spotify/LavaSrc] Searching: ${lavalinkQuery}`);
+          const result = await node.search(lavalinkQuery, 'dashboard');
+          
+          if (result && result.tracks && result.tracks.length > 0) {
+            const tracks = result.tracks.map(t => ({
+              encoded: t.encoded,
+              sourceName: t.info.sourceName,
+              title: t.info.title,
+              author: t.info.author,
+              uri: t.info.uri,
+              artworkUrl: t.info.artworkUrl,
+              duration: t.info.duration,
+            }));
+
+            setCachedSpotify(cacheKey, tracks);
+            
+            // For playlist/album loads, return all tracks
+            if (result.loadType === 'playlist') {
+              const listName = result.playlist?.name || result.playlist?.title || 'Lista de Spotify';
+              return res.json({ loadType: 'playlist', tracks, playlistName: listName });
+            }
+            return res.json({ loadType: 'search', tracks });
+          }
+        } catch (lavasrcErr) {
+          console.warn(`[Spotify/LavaSrc] Failed, falling back to direct API: ${lavasrcErr.message}`);
+        }
+      }
+
+      // ── Strategy 2: Direct Spotify API fallback (when LavaSrc not available)
       const token = await getSpotifyToken();
       if (!token) return res.status(500).json({ error: 'Spotify API not configured' });
 
@@ -83,6 +152,14 @@ router.get('/', async (req, res) => {
       const spotifyLimit  = Math.min(10, Math.max(1, Number(limit) || 10));
       const spotifyOffset = Math.min(950, Math.max(0, Number(offset) || 0));
       
+      // Check cache before hitting the API
+      const cacheKey = `${q}:${spotifyLimit}:${spotifyOffset}`;
+      const cached = getCachedSpotify(cacheKey);
+      if (cached) {
+        console.log(`[Spotify] Cache hit for "${q}"`);
+        return res.json({ loadType: 'search', tracks: cached });
+      }
+
       // Build URL manually - avoid Axios serialization issues
       const spotifyParams = new URLSearchParams();
       spotifyParams.set('q', q);
@@ -91,7 +168,7 @@ router.get('/', async (req, res) => {
       spotifyParams.set('offset', spotifyOffset);
       
       const spotifyUrl = `https://api.spotify.com/v1/search?${spotifyParams.toString()}`;
-      console.log(`[Spotify] Request URL: ${spotifyUrl}`);
+      console.log(`[Spotify] Direct API fallback: ${spotifyUrl}`);
 
       const response = await axios.get(spotifyUrl, {
         headers: { 
@@ -110,8 +187,10 @@ router.get('/', async (req, res) => {
         _searchQuery: `ytmsearch:${t.artists[0]?.name} ${t.name}`,
       }));
 
+      setCachedSpotify(cacheKey, tracks);
       return res.json({ loadType: 'search', tracks });
     }
+
 
     // Default to Lavalink search (ytsearch, ytmsearch, scsearch)
     let searchPrefix = 'ytsearch';

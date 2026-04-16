@@ -27,6 +27,7 @@ export default function Search({ guildId }) {
     const [hasMore, setHasMore] = useState(true);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [error, setError] = useState(null);
+    const [playlistInfo, setPlaylistInfo] = useState(null);
     const dropdownRef = useRef(null);
     const loadMoreRef = useRef(null);
     const [favUris, setFavUris] = useState(new Set());
@@ -73,8 +74,9 @@ export default function Search({ guildId }) {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    // Debounced real-time search
+    // Debounced real-time search (YouTube/SoundCloud only — Spotify uses Enter to avoid rate limits)  
     useEffect(() => {
+        if (source === 'spotify') return; // Spotify searches only on Enter
         if (!query.trim() || query.trim().length < 2) {
             setResults([]);
             setOffset(0);
@@ -93,6 +95,14 @@ export default function Search({ guildId }) {
 
         return () => clearTimeout(timer);
     }, [query, source]);
+
+    // When switching away from Spotify, clear results
+    useEffect(() => {
+        setResults([]);
+        setOffset(0);
+        setHasMore(true);
+        setError(null);
+    }, [source]);
 
     // Intersection Observer for infinite scroll
     useEffect(() => {
@@ -127,6 +137,16 @@ export default function Search({ guildId }) {
         if (isInitial) {
             setResults(newTracks);
             setOffset(pageLimit);
+            // If it's a playlist, store its info
+            if (res.data.loadType === 'playlist') {
+                setPlaylistInfo({
+                    name: res.data.playlistName,
+                    url: query, // Store the original URL for 'Play All'
+                    count: newTracks.length
+                });
+            } else {
+                setPlaylistInfo(null);
+            }
         } else {
             setResults(prev => [...prev, ...newTracks]);
             setOffset(prev => prev + pageLimit);
@@ -172,14 +192,33 @@ export default function Search({ guildId }) {
         const trimmedQuery = query.trim();
         if (!trimmedQuery) return;
 
-        // If it's a URL, send the raw URL to the backend so it can resolve playlists
+        // Spotify playlist/album/track URL → resolve via LavaSrc through search API
+        const isSpotifyUrl = trimmedQuery.includes('spotify.com') || trimmedQuery.startsWith('spotify:');
+        if (isSpotifyUrl) {
+            setOffset(0);
+            setHasMore(false);
+            setError(null);
+            performSearch(true);
+            return;
+        }
+
+        // Other URLs (YouTube, etc.) → send directly to bot to resolve
         if (trimmedQuery.startsWith('http')) {
             handlePlay({ uri: trimmedQuery, title: 'Enlace externo' });
             setQuery('');
             return;
         }
 
-        // If results are already here and we hit Enter, play the first one
+        // For Spotify text search: always search on Enter (real-time disabled to avoid rate limits)
+        if (source === 'spotify') {
+            setOffset(0);
+            setHasMore(true);
+            setError(null);
+            performSearch(true);
+            return;
+        }
+
+        // For other sources: if results are already here and we hit Enter, play the first one
         if (results.length > 0) {
             handlePlay(results[0]);
         } else {
@@ -203,7 +242,7 @@ export default function Search({ guildId }) {
                     <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-textSecondary" size={20} />
                     <input 
                         type="text" 
-                        placeholder="¿Qué quieres escuchar hoy?"
+                        placeholder={source === 'spotify' ? 'Busca en Spotify y pulsa Enter...' : '¿Qué quieres escuchar hoy?'}
                         value={query}
                         onChange={e => setQuery(e.target.value)}
                         className="w-full bg-white/5 border border-white/10 text-white rounded-2xl py-3.5 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white/10 transition placeholder-textSecondary shadow-lg"
@@ -245,7 +284,25 @@ export default function Search({ guildId }) {
                 <button type="submit" className="hidden"></button>
             </form>
 
-            <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+            {playlistInfo && (
+                <div className="mb-6 p-4 bg-primary/10 border border-primary/20 rounded-2xl flex items-center justify-between">
+                    <div>
+                        <p className="text-textSecondary text-sm uppercase tracking-wider font-bold">Playlist detectada</p>
+                        <h3 className="text-xl font-bold">{playlistInfo.name}</h3>
+                        <p className="text-textSecondary text-sm">{playlistInfo.count} canciones</p>
+                    </div>
+                    <button 
+                        onClick={() => handlePlay({ uri: playlistInfo.url, title: playlistInfo.name })}
+                        className="bg-primary hover:bg-primaryDark text-white px-6 py-2.5 rounded-xl font-bold transition flex items-center gap-2 shadow-lg"
+                    >
+                        <Play size={18} fill="currentColor" />
+                        Reproducir todo
+                    </button>
+                </div>
+            )}
+
+            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                <div className="space-y-4 pb-20">
                 {loading && (
                     <div className="flex flex-col items-center justify-center p-12 space-y-4">
                         <Loader2 className="animate-spin text-primary" size={40} />
