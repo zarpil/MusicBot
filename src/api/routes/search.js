@@ -78,8 +78,20 @@ router.get('/', async (req, res) => {
       const token = await getSpotifyToken();
       if (!token) return res.status(500).json({ error: 'Spotify API not configured' });
 
+      // Clamp params within Spotify's allowed ranges
+      const spotifyLimit  = Math.min(50, Math.max(1, Number(limit) || 20));
+      const spotifyOffset = Math.min(1000, Math.max(0, Number(offset) || 0));
+      
+      console.log(`[Spotify] Searching: q="${q}" limit=${spotifyLimit} offset=${spotifyOffset}`);
+
       const response = await axios.get('https://api.spotify.com/v1/search', {
-        params: { q, type: 'track', limit, offset },
+        params: { 
+          q, 
+          type: 'track', 
+          limit: spotifyLimit, 
+          offset: spotifyOffset, 
+          market: 'ES' 
+        },
         headers: { Authorization: `Bearer ${token}` },
       });
 
