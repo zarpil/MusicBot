@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
-import { Play, Pause, SkipForward, Volume2, Radio, Heart, Sparkles, X } from 'lucide-react';
+import { Play, Pause, SkipForward, Volume2, Radio, Heart, Sparkles, X, Languages } from 'lucide-react';
 import axios from 'axios';
 import usePlayerStore from '../store/usePlayerStore';
+import LyricsOverlay from './LyricsOverlay';
 
 function formatTime(ms) {
   if (!ms || isNaN(ms)) return '0:00';
@@ -16,6 +16,7 @@ export default function BottomPlayer() {
   const { active, paused, volume, position, autoplay, current, loading, filters } = usePlayerStore(state => state.state);
 
   const [showFilters, setShowFilters] = useState(false);
+  const [showLyrics, setShowLyrics] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [dragValue, setDragValue] = useState(0);
   
@@ -200,14 +201,22 @@ export default function BottomPlayer() {
          </div>
        </div>
  
-       {/* Right: Volume & Extra Controls */}
-       <div className="hidden md:flex w-[30%] min-w-[200px] justify-end items-center gap-4 text-textSecondary pr-6 relative">
+        {/* Right: Volume & Extra Controls */}
+        <div className="hidden md:flex w-[30%] min-w-[200px] justify-end items-center gap-4 text-textSecondary pr-6 relative">
           <button 
             onClick={() => setShowFilters(!showFilters)} 
             className={`transition ${showFilters || Object.values(filters || {}).some(v => v) ? 'text-primary' : 'hover:text-white'}`}
             title="Efectos de Audio"
           >
             <Sparkles size={18} />
+          </button>
+
+          <button 
+            onClick={() => setShowLyrics(true)} 
+            className="transition hover:text-white"
+            title="Letras (Sincronizadas)"
+          >
+            <Languages size={18} />
           </button>
 
           <div className="flex items-center gap-2 flex-1 max-w-[150px]">
@@ -266,7 +275,13 @@ export default function BottomPlayer() {
                   </div>
               </div>
           )}
-       </div>
+        </div>
+
+        {/* Lyrics Full-screen Overlay */}
+        <LyricsOverlay 
+          isOpen={showLyrics} 
+          onClose={() => setShowLyrics(false)} 
+        />
      </div>
   );
 }

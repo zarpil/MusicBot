@@ -14,6 +14,7 @@ const searchRouter    = require('./routes/search');
 const authRouter      = require('./routes/auth');
 const historyRouter   = require('./routes/history');
 const favoritesRouter = require('./routes/favorites');
+const lyricsRouter    = require('./routes/lyrics');
 const { requireAuth } = require('./middleware/auth');
 
 /**
@@ -43,6 +44,7 @@ async function initApi(discordClient) {
   app.use('/api/history',   requireAuth, historyRouter);
   app.use('/api/search',    requireAuth, searchRouter);
   app.use('/api/favorites', requireAuth, favoritesRouter);
+  app.use('/api/lyrics',    requireAuth, lyricsRouter);
 
   // Health check
   app.get('/api/health', (_req, res) => res.json({ status: 'ok', uptime: process.uptime() }));
