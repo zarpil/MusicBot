@@ -4,6 +4,7 @@ const WebSocket = require('ws');
 const db = require('../../db/database');
 const { serializePlayer, serializeTrack } = require('../../utils/playerSerializers');
 const { ensurePlayer } = require('../../bot/utils/voiceUtils');
+const { syncState } = require('../../utils/stateSync');
 
 /** guild ID → Set<WebSocket> */
 const rooms = new Map();
@@ -77,25 +78,29 @@ function initWsServer(httpServer, getManager, discordClient) {
           case 'PAUSE':
             if (player) {
               await player.pause(true);
-              broadcast(guildId, { type: 'STATE_SYNC', state: serializePlayer(player) });
+              syncState(discordClient, player);
             }
             break;
 
           case 'RESUME':
             if (player) {
               await player.resume();
-              broadcast(guildId, { type: 'STATE_SYNC', state: serializePlayer(player) });
+              syncState(discordClient, player);
             }
             break;
 
           case 'SKIP':
-            if (player) await player.skip();
+            if (player) {
+                await player.skip();
+                syncState(discordClient, player);
+            }
             break;
 
           case 'STOP':
             if (player) {
               player.queue.tracks = [];
               await player.stopPlaying();
+              syncState(discordClient, player);
             }
             break;
 
@@ -108,7 +113,7 @@ function initWsServer(httpServer, getManager, discordClient) {
           case 'VOLUME':
             if (player && typeof msg.volume === 'number') {
               await player.setVolume(Math.min(100, Math.max(0, msg.volume)));
-              broadcast(guildId, { type: 'STATE_SYNC', state: serializePlayer(player) });
+              syncState(discordClient, player);
             }
             break;
 
@@ -117,10 +122,7 @@ function initWsServer(httpServer, getManager, discordClient) {
               const newState = !player.get('autoplay');
               player.set('autoplay', newState);
               db.setAutoplay(guildId, newState); // Persist in DB
-              broadcast(guildId, {
-                type:     'STATE_SYNC',
-                state:    serializePlayer(player),
-              });
+              syncState(discordClient, player);
             }
             break;
 
@@ -209,10 +211,7 @@ function initWsServer(httpServer, getManager, discordClient) {
                   await player.play();
                 }
 
-                broadcast(guildId, {
-                  type: 'STATE_SYNC',
-                  state: serializePlayer(player),
-                });
+                syncState(discordClient, player);
               } catch (err) {
                 console.error('[WS] Enqueue error:', err);
                 send(ws, { type: 'ERROR', message: 'Error al procesar la pista' });

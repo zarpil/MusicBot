@@ -3,6 +3,7 @@
 const { LavalinkManager } = require('lavalink-client');
 const db = require('../db/database');
 const { updateSetupPanel } = require('../bot/utils/setupPanel');
+const { syncState } = require('../utils/stateSync');
 
 /** @type {LavalinkManager|null} */
 let _manager = null;
@@ -64,7 +65,30 @@ function createManager(discordClient) {
 
   _manager.on('trackStart', (player, track) => {
     console.log(`[Lavalink] trackStart: ${track?.info?.title} in ${player.guildId}`);
-    updateSetupPanel(discordClient, player.guildId, player);
+    
+    // Auto-sync across all platforms
+    syncState(discordClient, player);
+
+    // Update DB guild entry on new track
+    db.upsertGuild(player.guildId, {
+      volume: player.volume,
+      autoplay: player.get('autoplay') ? 1 : 0,
+    });
+
+    // Record in history
+    try {
+      db.addHistoryEntry(player.guildId, track);
+    } catch (err) {
+      console.error('[History] Error recording track:', err.message);
+    }
+  });
+
+  _manager.on('playerPause', (player) => {
+    syncState(discordClient, player);
+  });
+
+  _manager.on('playerResume', (player) => {
+    syncState(discordClient, player);
   });
   
   // Shared Autoplay Logic
@@ -134,12 +158,9 @@ function createManager(discordClient) {
           
           if (!player.playing) await player.play();
           
-          try {
-            const ws = require('../api/ws/wsServer');
-            if (ws && ws.broadcast) {
-              ws.broadcast(player.guildId, { type: 'STATE_SYNC', state: ws.serializePlayer(player) });
-            }
-          } catch (err) {}
+          // syncState will be called by trackStart event if it actually starts playing
+          // but we also call it here to sync the new queue instantly
+          syncState(discordClient, player);
         }
       } catch (err) {
         console.error('[Lavalink] Autoplay Error:', err);
@@ -160,7 +181,7 @@ function createManager(discordClient) {
     player.set('lastAutoplayTrigger', now);
     
     await handleAutoplay(player, track);
-    updateSetupPanel(discordClient, player.guildId, player);
+    syncState(discordClient, player);
   });
 
   _manager.on('queueEnd', async (player, track, payload) => {
@@ -172,11 +193,16 @@ function createManager(discordClient) {
     player.set('lastAutoplayTrigger', now);
 
     await handleAutoplay(player, track);
-    updateSetupPanel(discordClient, player.guildId, player);
+    syncState(discordClient, player);
   });
 
   _manager.on('playerDestroy', (player) => {
     updateSetupPanel(discordClient, player.guildId, null);
+    // WS broadcast for destroy
+    try {
+        const ws = require('../api/ws/wsServer');
+        ws.broadcast(player.guildId, { type: 'STATE_SYNC', state: null });
+    } catch {}
   });
   
   _manager.on('trackStuck', (player, track, payload) => {

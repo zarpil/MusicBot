@@ -1,6 +1,7 @@
 'use strict';
 
 const { Events } = require('discord.js');
+const { syncState } = require('../../utils/stateSync');
 
 module.exports = {
   name: Events.InteractionCreate,
@@ -45,7 +46,9 @@ module.exports = {
                     player.set('autoplay', nextAutoplay);
                     break;
             }
-            // Panels are updated via lavalink manager events
+            
+            // Sync across all platforms (Web and Discord Panel)
+            syncState(client, player);
         } catch (err) {
             console.error('[InteractionCreate] Button error:', err);
         }
