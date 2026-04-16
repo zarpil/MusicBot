@@ -31,26 +31,28 @@ function isSimilar(s1, s2) {
  */
 function cleanName(text) {
     if (!text) return '';
-    // Special case: if it contains " - ", try to extract the title part
+    
+    // 1. Artist-specific cleaning (YouTube "Topic" channels)
+    text = text.replace(/\s*-\s*Topic\s*$/gi, '');
+
+    // 2. Extra metadata removal (Hashtags, Social Credits)
+    text = text
+        .replace(/#\w+/g, '') // Remove hashtags like #drill #official
+        .replace(/@\w+/g, '') // Remove user handles
+        .replace(/\b(shot\.?|directed|dir\.?|produced|prod\.?|by|edit|music|video)\s+by\b.*$/gi, '') // Remove visual/social credits
+        .replace(/\b(official\s+video|official\s+audio|official\s+lyric\s+video|video\s+oficial|videoclip)\b/gi, '');
+
+    // 3. Extract title if format is "Artist - Title" (common in YT titles)
     if (text.includes(' - ')) {
         const parts = text.split(' - ');
-        // Usually the second part is the track name
         text = parts[parts.length - 1];
     }
 
+    // 4. Common music cleanups
     return text
-        .replace(/^\d+[\.\-\s]+/, '') // Remove leading numbers (e.g., "10. ", "01 - ")
-        .replace(/\b(prod\.?|produced by|prod de|producción de)\b.*$/gi, '') // Remove everything from "Prod" onwards
-        .replace(/\(Official Video.*?\)/gi, '')
-        .replace(/\(Video Oficial.*?\)/gi, '')
-        .replace(/\bVIDEOCLIP\b/gi, '')
-        .replace(/\(Official Audio.*?\)/gi, '')
-        .replace(/\(Lyric Video.*?\)/gi, '')
-        .replace(/\(Lyrics.*?\)/gi, '')
-        .replace(/\[Official Video.*?\]/gi, '')
-        .replace(/\[Lyric Video.*?\]/gi, '')
-        .replace(/\(.*?\)/g, '')
-        .replace(/\[.*?\]/g, '')
+        .replace(/^\d+[\.\-\s]+/, '') // Leading track numbers
+        .replace(/\(.*?\)/g, '')      // Text in parentheses
+        .replace(/\[.*?\]/g, '')      // Text in brackets
         .replace(/\bfeat\..*?\b/gi, '')
         .replace(/\bft\..*?\b/gi, '')
         .replace(/ - Remastered\b/gi, '')
@@ -93,12 +95,22 @@ async function getLyricsFromLRCLIB(artist, title, durationMs) {
     let cleanArtist = cleanName(artist);
     let cleanTitle = cleanName(title);
     
+    // Metadata split check: If the title contains the artist (e.g., "Kase.O - Mazas y Catapultas")
+    if (title.includes(' - ') && !artist.includes(' - ')) {
+        const parts = title.split(' - ');
+        const artistInTitle = cleanName(parts[0]);
+        const titleInTitle = cleanName(parts[1]);
+        if (isSimilar(artistInTitle, cleanArtist)) {
+            cleanTitle = titleInTitle;
+        }
+    }
+
     const axiosConfig = {
-        headers: { 'User-Agent': 'TussiMusicBot/3.0 (ReliableHunter)' },
+        headers: { 'User-Agent': 'TussiMusicBot/3.0 (PrecisionHunterV3)' },
         timeout: 4000
     };
 
-    // Strategy 1: Strict Get (Most precise)
+    // Strategy 1: Strict Get (High precision)
     try {
         console.log(`[Lyrics/Hunter] Attempt 1 (Strict): "${cleanArtist}" - "${cleanTitle}" (${durationSec}s)`);
         const res = await axios.get('https://lrclib.net/api/get', {
@@ -111,11 +123,10 @@ async function getLyricsFromLRCLIB(artist, title, durationMs) {
         }
     } catch (e) {}
 
-    // Strategy 2: Sequential Deep Search with Early Exit
+    // Strategy 2: Sequential Deep Search with Critical Scoring
     const searchPatterns = [
         `${cleanArtist} ${cleanTitle}`,
-        cleanTitle,
-        `${cleanArtist} ${cleanTitle.replace(/\s/g, '')}`
+        cleanTitle
     ];
 
     let bestCandidate = null;
@@ -138,23 +149,28 @@ async function getLyricsFromLRCLIB(artist, title, durationMs) {
                 const normCleanTitle = normalize(cleanTitle);
 
                 // Artist score (Max 50)
-                if (normArtist === normCleanArtist) score += 50;
-                else if (isSimilar(normArtist, normCleanArtist)) score += 30;
+                if (normArtist === normCleanArtist) {
+                    score += 50;
+                } else if (isSimilar(normArtist, normCleanArtist) || normCleanArtist.includes(normArtist) || normArtist.includes(normCleanArtist)) {
+                    score += 35;
+                } else {
+                    // Massive penalty for completely different artists
+                    score -= 100;
+                }
 
                 // Title score (Max 50)
-                if (normTitle === normCleanTitle) score += 50;
-                else if (isSimilar(normTitle, normCleanTitle)) score += 30;
+                if (normTitle === normCleanTitle) {
+                    score += 50;
+                } else if (isSimilar(normTitle, normCleanTitle)) {
+                    score += 30;
+                }
 
                 // Duration score (Max 20)
                 if (durationSec) {
                     const diff = Math.abs(item.duration - durationSec);
-                    if (diff <= 3) score += 20;
-                    else if (diff <= 15) score += 10;
-                }
-
-                // Small penalty if the artist is completely different but title matches
-                if (normTitle === normCleanTitle && normArtist !== normCleanArtist && !isSimilar(normArtist, normCleanArtist)) {
-                    score -= 20;
+                    if (diff <= 2) score += 20;
+                    else if (diff <= 8) score += 10;
+                    else if (diff > 30) score -= 30; // Significant penalty for wrong duration
                 }
 
                 if (score > highestScore) {
@@ -163,18 +179,18 @@ async function getLyricsFromLRCLIB(artist, title, durationMs) {
                 }
             }
 
-            // Early exit if we found a very high quality match
-            if (highestScore >= 80) {
-                console.log(`[Lyrics/Hunter] ✅ Strong match found (${highestScore} pts). Stopping search.`);
+            // Early exit for perfect match
+            if (highestScore >= 100) {
+                console.log(`[Lyrics/Hunter] ✅ Perfect match found. Stopping.`);
                 break;
             }
         } catch (e) {
-            console.error(`[Lyrics/Hunter] Search error for "${query}":`, e.message);
+            console.error(`[Lyrics/Hunter] Search error:`, e.message);
         }
     }
 
-    if (bestCandidate && highestScore >= 30) {
-        console.log(`[Lyrics/Hunter] ✅ Final Pick: ${bestCandidate.trackName} - ${bestCandidate.artistName} (Score: ${highestScore})`);
+    if (bestCandidate && highestScore >= 45) {
+        console.log(`[Lyrics/Hunter] ✅ Picked: ${bestCandidate.trackName} - ${bestCandidate.artistName} (Score: ${highestScore})`);
         return bestCandidate;
     }
 
