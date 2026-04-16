@@ -39,6 +39,8 @@ function cleanName(text) {
     }
 
     return text
+        .replace(/^\d+[\.\-\s]+/, '') // Remove leading numbers (e.g., "10. ", "01 - ")
+        .replace(/\b(prod\.?|produced by|prod de|producción de)\b.*$/gi, '') // Remove everything from "Prod" onwards
         .replace(/\(Official Video.*?\)/gi, '')
         .replace(/\(Video Oficial.*?\)/gi, '')
         .replace(/\bVIDEOCLIP\b/gi, '')
