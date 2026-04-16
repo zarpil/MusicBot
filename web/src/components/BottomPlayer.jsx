@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Play, Pause, SkipForward, Volume2, Radio, Heart, Sparkles, X, Languages } from 'lucide-react';
+import { Play, Pause, SkipForward, Volume2, Radio, Heart, Sparkles, X, Mic2 } from 'lucide-react';
 import axios from 'axios';
 import usePlayerStore from '../store/usePlayerStore';
 import LyricsOverlay from './LyricsOverlay';
@@ -217,7 +217,7 @@ export default function BottomPlayer() {
             className="transition hover:text-white"
             title="Letras (Sincronizadas)"
           >
-            <Languages size={18} />
+            <Mic2 size={18} />
           </button>
 
           <div className="flex items-center gap-2 flex-1 max-w-[150px]">
