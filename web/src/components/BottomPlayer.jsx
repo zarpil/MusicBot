@@ -136,7 +136,7 @@ export default function BottomPlayer() {
               
               {/* Mobile Lyrics Button */}
               <button
-                onClick={() => setShowLyrics(true)}
+                onClick={() => setShowLyrics(!showLyrics)}
                 className="flex md:hidden text-textSecondary hover:text-white transition-all"
                 title="Letras"
               >
@@ -203,6 +203,7 @@ export default function BottomPlayer() {
               onMouseDown={handleSeekStart}
               onInput={handleSeekChange}
               onMouseUp={handleSeekEnd}
+              onMouseUp={handleSeekEnd}
               onTouchStart={handleSeekStart}
               onTouchEnd={handleSeekEnd}
               className="absolute w-full h-4 opacity-0 cursor-pointer accent-primary"
@@ -224,8 +225,8 @@ export default function BottomPlayer() {
         </button>
 
         <button
-          onClick={() => setShowLyrics(true)}
-          className="transition hover:text-white"
+          onClick={() => setShowLyrics(!showLyrics)}
+          className={`transition ${showLyrics ? 'text-primary' : 'hover:text-white'}`}
           title="Letras (Sincronizadas)"
         >
           <Mic2 size={18} />
