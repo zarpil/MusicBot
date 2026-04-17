@@ -189,173 +189,184 @@ export default function PlaylistDetails({ playlistId, onBack }) {
     return (
         <div className="flex flex-col h-full overflow-hidden">
             {/* Header */}
-            <div className="flex items-start gap-8 mb-8">
-                <div className="relative group w-48 h-48 shrink-0 shadow-2xl">
+            <div className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8 mb-8">
+                <div className="relative group w-48 h-48 md:w-56 md:h-56 shrink-0 shadow-2xl">
                     {playlist.creator_avatar ? (
-                        <img src={playlist.creator_avatar} className="w-full h-full object-cover rounded-3xl" alt="" />
+                        <img src={playlist.creator_avatar} className="w-full h-full object-cover rounded-[2rem] md:rounded-3xl" alt="" />
                     ) : (
-                        <div className="w-full h-full bg-surfaceHighlight rounded-3xl flex items-center justify-center">
+                        <div className="w-full h-full bg-surfaceHighlight rounded-[2rem] md:rounded-3xl flex items-center justify-center">
                             <Music size={64} className="text-textSecondary opacity-20" />
                         </div>
                     )}
                 </div>
 
-                <div className="flex-1 flex flex-col justify-end h-48">
+                <div className="flex-1 flex flex-col justify-center md:justify-end text-center md:text-left">
                     <button
                         onClick={onBack}
-                        className="flex items-center gap-2 text-textSecondary hover:text-white mb-4 transition w-fit group"
+                        className="hidden md:flex items-center gap-2 text-textSecondary hover:text-white mb-4 transition w-fit group"
                     >
                         <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
                         <span className="text-xs font-bold uppercase tracking-widest">Volver a listas</span>
                     </button>
 
-                    <h2 className="text-5xl font-black mb-4 tracking-tighter">{playlist.name}</h2>
+                    <h2 className="text-3xl md:text-6xl font-black mb-3 md:mb-4 tracking-tighter leading-none">{playlist.name}</h2>
 
-                    <div className="flex items-center gap-4 text-sm text-textSecondary">
+                    <div className="flex flex-col md:flex-row items-center gap-4 text-sm text-textSecondary">
                         <div className="flex items-center gap-2">
                             <img src={playlist.creator_avatar} className="w-6 h-6 rounded-full" alt="" />
                             <span className="text-white font-bold">{playlist.creator_name}</span>
                         </div>
-                        <span>•</span>
-                        <span>{playlist.tracks?.length || 0} canciones</span>
-                        {playlist.tracks?.length > 0 && (
-                            <>
-                                <span>•</span>
-                                <span>{formatTotalTime(totalDuration)}</span>
-                            </>
-                        )}
-                        <span>•</span>
-                        <div className="flex items-center gap-4 ml-auto">
-                            <button 
-                                onClick={handlePlayAll}
-                                className="bg-primary hover:bg-pink-400 text-black px-8 py-3 rounded-full font-bold flex items-center gap-2 transition-all hover:scale-105 shadow-lg shadow-primary/20"
-                            >
-                                <Play size={20} className="fill-black" /> REPRODUCIR TODO
-                            </button>
-                            {isCreator && (
-                                <>
-                                    <button 
-                                        onClick={() => setIsSearchModalOpen(true)}
-                                        className="bg-white/5 hover:bg-white/10 text-white px-6 py-3 rounded-full font-bold flex items-center gap-2 transition-all border border-white/10"
-                                    >
-                                        <Plus size={20} /> AÑADIR CANCIÓN
-                                    </button>
-                                    <button 
-                                        onClick={handleDeletePlaylist}
-                                        className="p-3 bg-white/5 hover:bg-red-500/20 text-textSecondary hover:text-red-500 border border-white/10 rounded-full transition-all"
-                                        title="Eliminar lista"
-                                    >
-                                        <Trash2 size={20} />
-                                    </button>
-                                </>
-                            )}
+                        <div className="hidden md:block">|</div>
+                        <div className="flex items-center gap-4">
+                            <span>{playlist.tracks?.length || 0} canciones</span>
+                            <span>•</span>
+                            <span>{formatTotalTime(totalDuration)}</span>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            {/* Tracks List */}
+                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mt-6">
+                        <button 
+                            onClick={handlePlayAll}
+                            className="bg-primary hover:bg-pink-400 text-black px-6 md:px-8 py-3 rounded-full font-bold flex items-center gap-2 transition-all hover:scale-105 shadow-xl shadow-primary/20"
+                        >
+                            <Play size={20} className="fill-black" /> REPRODUCIR TODO
+                        </button>
+                        {isCreator && (
+                            <div className="flex items-center gap-3">
+                                <button 
+                                    onClick={() => setIsSearchModalOpen(true)}
+                                    className="bg-white/5 hover:bg-white/10 text-white p-3 rounded-full font-bold flex items-center gap-2 transition-all border border-white/10"
+                                    title="Añadir canción"
+                                >
+                                    <Plus size={20} />
+                                    <span className="hidden md:inline">AÑADIR</span>
+                                </button>
+                                <button 
+                                    onClick={handleDeletePlaylist}
+                                    className="p-3 bg-white/5 hover:bg-red-500/20 text-textSecondary hover:text-red-500 border border-white/10 rounded-full transition-all"
+                                    title="Eliminar lista"
+                                >
+                                    <Trash2 size={20} />
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+                       {/* Tracks List */}
             <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
                 <DragDropContext onDragEnd={handleReorder}>
                     <Droppable droppableId="playlist-tracks" isDropDisabled={!isCreator}>
                         {(provided) => (
-                            <table 
-                                className="w-full border-separate border-spacing-y-2"
+                            <div 
                                 {...provided.droppableProps}
                                 ref={provided.innerRef}
+                                className="space-y-2 pb-20"
                             >
-                                <thead>
-                                    <tr className="text-left text-[11px] text-textSecondary uppercase tracking-widest">
-                                        <th className="px-4 py-2 font-bold w-12">#</th>
-                                        {isCreator && <th className="px-4 py-2 w-8"></th>}
-                                        <th className="px-4 py-2 font-bold">Título</th>
-                                        <th className="px-4 py-2 font-bold hidden md:table-cell">Autor</th>
-                                        <th className="px-4 py-2 font-bold w-12 text-center"><Heart size={16} className="inline opacity-40" /></th>
-                                        <th className="px-4 py-2 font-bold w-20 text-right"><Clock size={16} className="inline" /></th>
-                                        {isCreator && <th className="px-4 py-2 w-12"></th>}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {playlist.tracks?.map((track, i) => (
-                                        <Draggable 
-                                            key={track.id.toString()} 
-                                            draggableId={track.id.toString()} 
-                                            index={i}
-                                            isDragDisabled={!isCreator}
-                                        >
-                                            {(provided, snapshot) => (
-                                                <tr
-                                                    ref={provided.innerRef}
-                                                    {...provided.draggableProps}
-                                                    className={`group transition-colors cursor-pointer ${snapshot.isDragging ? 'bg-white/10 shadow-2xl' : 'hover:bg-white/5'}`}
-                                                    onClick={() => handlePlayTrack(track)}
-                                                >
-                                                    <td className="px-4 py-3 rounded-l-2xl text-textSecondary font-mono text-sm">
-                                                        <div className="group-hover:hidden">{i + 1}</div>
-                                                        <Play size={14} className="hidden group-hover:block text-primary fill-primary" />
-                                                    </td>
-                                                    
-                                                    {isCreator && (
-                                                        <td className="px-4 py-3">
-                                                            <div 
-                                                                {...provided.dragHandleProps}
-                                                                className="text-textSecondary opacity-40 hover:opacity-100 cursor-grab active:cursor-grabbing p-1"
-                                                            >
-                                                                <GripVertical size={16} />
-                                                            </div>
-                                                        </td>
-                                                    )}
+                                {/* Desktop Header (Hidden on Mobile) */}
+                                <div className="hidden md:grid grid-cols-[48px_48px_1fr_1fr_48px_80px_48px] gap-4 px-4 py-2 text-[11px] text-textSecondary uppercase tracking-widest font-bold border-b border-white/5 mb-2">
+                                    <span>#</span>
+                                    <span></span>
+                                    <span>Título</span>
+                                    <span>Autor</span>
+                                    <span className="text-center"><Heart size={14} className="inline opacity-40" /></span>
+                                    <span className="text-right"><Clock size={14} className="inline opacity-40" /></span>
+                                    <span></span>
+                                </div>
 
-                                                    <td className="px-4 py-3">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="w-10 h-10 bg-surface rounded flex items-center justify-center shrink-0">
-                                                                {track.artwork_url ? (
-                                                                    <img src={track.artwork_url} className="w-full h-full object-cover rounded" alt="" />
-                                                                ) : (
-                                                                    <Music size={20} className="text-textSecondary opacity-20" />
-                                                                )}
-                                                            </div>
-                                                            <div className="font-semibold text-white truncate">{track.title}</div>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-4 py-3 text-textSecondary text-sm hidden md:table-cell truncate">
-                                                        {track.author}
-                                                    </td>
-                                                    <td className="px-4 py-3 text-center">
-                                                        <button 
-                                                            onClick={(e) => handleToggleFavorite(e, track)}
-                                                            className={`p-2 rounded-full transition-colors ${favUris.has(track.uri || track.track_uri) ? 'text-primary' : 'text-textSecondary hover:text-white'}`}
+                                {playlist.tracks?.map((track, i) => (
+                                    <Draggable 
+                                        key={track.id.toString()} 
+                                        draggableId={track.id.toString()} 
+                                        index={i}
+                                        isDragDisabled={!isCreator}
+                                    >
+                                        {(provided, snapshot) => (
+                                            <div
+                                                ref={provided.innerRef}
+                                                {...provided.draggableProps}
+                                                onClick={() => handlePlayTrack(track)}
+                                                className={`flex md:grid md:grid-cols-[48px_48px_1fr_1fr_48px_80px_48px] items-center gap-4 p-3 md:p-2 rounded-2xl md:rounded-xl group transition-all cursor-pointer border border-transparent ${
+                                                    snapshot.isDragging 
+                                                        ? 'bg-surfaceHighlight shadow-2xl scale-[1.02] border-white/20 z-[200]' 
+                                                        : 'hover:bg-white/5'
+                                                }`}
+                                            >
+                                                {/* Index / Play Icon */}
+                                                <div className="hidden md:flex items-center justify-center text-textSecondary font-mono text-sm">
+                                                    <span className="group-hover:hidden">{i + 1}</span>
+                                                    <Play size={14} className="hidden group-hover:block text-primary fill-primary" />
+                                                </div>
+
+                                                {/* Drag Handle */}
+                                                {isCreator ? (
+                                                    <div 
+                                                        {...provided.dragHandleProps}
+                                                        className="text-textSecondary opacity-40 hover:opacity-100 cursor-grab active:cursor-grabbing p-1"
+                                                    >
+                                                        <GripVertical size={16} />
+                                                    </div>
+                                                ) : <div className="hidden md:block"></div>}
+
+                                                {/* Track Info (Artwork + Title + Author) */}
+                                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                    <div className="w-12 h-12 md:w-10 md:h-10 bg-surface rounded-xl md:rounded-lg flex items-center justify-center shrink-0 shadow-lg">
+                                                        {track.artwork_url ? (
+                                                            <img src={track.artwork_url} className="w-full h-full object-cover rounded-xl md:rounded-lg" alt="" />
+                                                        ) : (
+                                                            <Music size={20} className="text-textSecondary opacity-20" />
+                                                        )}
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="font-bold md:font-semibold text-white truncate text-base md:text-sm">{track.title}</div>
+                                                        <div className="text-xs text-textSecondary md:hidden truncate mt-0.5">{track.author}</div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Desktop Author Column */}
+                                                <div className="hidden md:block text-textSecondary text-xs truncate">
+                                                    {track.author}
+                                                </div>
+
+                                                {/* Favorite Button */}
+                                                <div className="flex items-center justify-center">
+                                                    <button 
+                                                        onClick={(e) => handleToggleFavorite(e, track)}
+                                                        className={`p-2 rounded-full transition-colors ${favUris.has(track.uri || track.track_uri) ? 'text-primary' : 'text-textSecondary hover:text-white hover:bg-white/10'}`}
+                                                    >
+                                                        <Heart size={18} md:size={16} fill={favUris.has(track.uri || track.track_uri) ? "currentColor" : "none"} />
+                                                    </button>
+                                                </div>
+
+                                                {/* Duration */}
+                                                <div className="text-right font-mono text-xs md:text-sm text-textSecondary pr-2">
+                                                    {formatTime(track.duration)}
+                                                </div>
+
+                                                {/* Delete Button (Creator only) */}
+                                                {isCreator && (
+                                                    <div className="hidden md:flex items-center justify-end">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleDeleteTrack(track.id);
+                                                            }}
+                                                            className="opacity-0 group-hover:opacity-100 p-2 hover:text-red-500 transition-all rounded-lg hover:bg-red-500/10"
                                                         >
-                                                            <Heart size={16} fill={favUris.has(track.uri || track.track_uri) ? "currentColor" : "none"} />
+                                                            <Trash2 size={16} />
                                                         </button>
-                                                    </td>
-                                                    <td className={`px-4 py-3 text-right font-mono text-sm text-textSecondary ${isCreator ? '' : 'rounded-r-2xl'}`}>
-                                                        {formatTime(track.duration)}
-                                                    </td>
-                                                    {isCreator && (
-                                                        <td className="px-4 py-3 text-right rounded-r-2xl">
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    handleDeleteTrack(track.id);
-                                                                }}
-                                                                className="opacity-0 group-hover:opacity-100 p-2 hover:text-red-500 transition-all"
-                                                            >
-                                                                <Trash2 size={16} />
-                                                            </button>
-                                                        </td>
-                                                    )}
-                                                </tr>
-                                            )}
-                                        </Draggable>
-                                    ))}
-                                    {provided.placeholder}
-                                </tbody>
-                            </table>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </Draggable>
+                                ))}
+                                {provided.placeholder}
+                            </div>
                         )}
                     </Droppable>
                 </DragDropContext>
             </div>
+   </div>
 
             {/* Search Modal (Only for Creator) */}
             {isCreator && isSearchModalOpen && (
