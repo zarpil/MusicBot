@@ -252,11 +252,6 @@ export default function PlaylistDetails({ playlistId, onBack }) {
                         )}
                     </div>
                 </div>
-                       {/* Tracks List */}
-            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                <DragDropContext onDragEnd={handleReorder}>
-                    <Droppable droppableId="playlist-tracks" isDropDisabled={!isCreator}>
-                        {(provided) => (
             {/* Tracks List */}
             <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
                 <DragDropContext onDragEnd={handleReorder}>
