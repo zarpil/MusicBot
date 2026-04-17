@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Search as SearchIcon, Heart, History as HistoryIcon, Library } from 'lucide-react';
 
 import usePlayerStore from '../store/usePlayerStore';
 import Sidebar from './Sidebar';
