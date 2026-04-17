@@ -34,22 +34,45 @@ export default function PlayerPage() {
         <Sidebar guildId={guildId} activeView={view} setView={setView} />
 
         <main className="flex-1 flex flex-col min-w-0 bg-surface m-0 md:m-2 mb-0 rounded-t-none md:rounded-t-xl overflow-hidden relative">
-          {/* Mobile Header */}
-          <div className="md:hidden flex items-center p-4 border-b border-surfaceHighlight bg-surface shrink-0">
-            <button 
-              onClick={() => navigate('/')} 
-              className="flex items-center gap-2 text-textSecondary hover:text-white transition group"
-            >
-              <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
-              <span className="font-semibold text-sm tracking-widest uppercase text-xs">Servidores</span>
-            </button>
-            <div className="flex-1 text-center font-bold text-primary text-sm uppercase tracking-widest">
-              {view === 'player' ? 'Reproductor' : view === 'favorites' ? 'Favoritos' : view === 'history' ? 'Historial' : 'Listas'}
+          {/* Mobile Header & Navigation */}
+          <div className="md:hidden flex flex-col bg-surface/80 backdrop-blur-xl border-b border-surfaceHighlight shrink-0 z-[150]">
+            <div className="flex items-center p-4">
+              <button 
+                onClick={() => navigate('/')} 
+                className="flex items-center gap-2 text-textSecondary hover:text-white transition group"
+              >
+                <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
+                <span className="font-semibold text-sm tracking-widest uppercase text-xs">Servidores</span>
+              </button>
+              <div className="flex-1 text-center font-black text-white text-sm uppercase tracking-widest">
+                Tussi Bot
+              </div>
+              <div className="w-20"></div> {/* Spacer for alignment */}
             </div>
-            <div className="w-20"></div> {/* Spacer for alignment */}
+
+            {/* Top Navigation Tabs */}
+            <div className="flex items-center justify-between px-6 pb-4">
+              {[
+                { id: 'player', icon: <SearchIcon size={18} />, label: 'Buscar' },
+                { id: 'favorites', icon: <Heart size={18} />, label: 'Favoritos' },
+                { id: 'history', icon: <HistoryIcon size={18} />, label: 'Historial' },
+                { id: 'playlists', icon: <Library size={18} />, label: 'Listas' },
+              ].map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => setView(item.id)}
+                  className={`flex flex-col items-center gap-1 transition-all ${view === item.id ? 'text-primary' : 'text-textSecondary opacity-60'}`}
+                >
+                  <div className={`p-2 rounded-xl transition-all ${view === item.id ? 'bg-primary/10' : ''}`}>
+                    {item.icon}
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-tighter">{item.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div className="p-4 md:p-6 overflow-y-auto flex-1 pb-32 md:pb-6">
+          <div className="p-4 md:p-6 overflow-y-auto flex-1 pb-24 md:pb-6">
             {view === 'player' ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
                 <Search guildId={guildId} />
@@ -73,25 +96,6 @@ export default function PlayerPage() {
                 onBack={() => setView('playlists')} 
               />
             )}
-          </div>
-          
-          {/* Mobile Bottom Navigation Bar */}
-          <div className="md:hidden fixed bottom-24 left-0 right-0 bg-black/80 backdrop-blur-xl border-t border-white/5 px-6 py-3 flex items-center justify-between z-[150]">
-            {[
-              { id: 'player', icon: <SearchIcon size={20} />, label: 'Buscar' },
-              { id: 'favorites', icon: <Heart size={20} />, label: 'Favoritos' },
-              { id: 'history', icon: <HistoryIcon size={20} />, label: 'Historial' },
-              { id: 'playlists', icon: <Library size={20} />, label: 'Listas' },
-            ].map(item => (
-              <button
-                key={item.id}
-                onClick={() => setView(item.id)}
-                className={`flex flex-col items-center gap-1 transition-all ${view === item.id ? 'text-primary scale-110' : 'text-textSecondary'}`}
-              >
-                {item.icon}
-                <span className="text-[10px] font-bold uppercase tracking-tighter">{item.label}</span>
-              </button>
-            ))}
           </div>
         </main>
       </div>

@@ -238,7 +238,7 @@ function initWsServer(httpServer, getManager, discordClient) {
                 syncState(discordClient, player);
               } catch (err) {
                 console.error('[WS] Enqueue error:', err);
-                send(ws, { type: 'ERROR', message: 'Error al procesar la pista' });
+                send(ws, { type: 'ERROR', message: err.message || 'Error al procesar la pista' });
               }
             } else {
               send(ws, { type: 'ERROR', message: 'El bot no está en un canal de voz o la pista es inválida' });

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import useAuthStore from './useAuthStore';
+import { toast } from 'react-hot-toast';
 const usePlayerStore = create((set, get) => ({
   ws: null,
   activeGuildId: null,
@@ -51,10 +52,12 @@ const usePlayerStore = create((set, get) => ({
             break;
 
           case 'SUCCESS':
+            if (msg.message) toast.success(msg.message);
             set({ state: { ...state, loading: false } });
             break;
 
           case 'ERROR':
+            if (msg.message) toast.error(msg.message);
             console.error('WebSocket Error:', msg.message);
             set({ state: { ...state, loading: false } });
             break;
