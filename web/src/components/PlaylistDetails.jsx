@@ -368,7 +368,6 @@ export default function PlaylistDetails({ playlistId, onBack }) {
                     </Droppable>
                 </DragDropContext>
             </div>
-   </div>
 
             {/* Search Modal (Only for Creator) */}
             {isCreator && isSearchModalOpen && (
