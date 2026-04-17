@@ -125,13 +125,24 @@ export default function BottomPlayer() {
         <div className="overflow-hidden flex-1">
           <div className="flex items-center gap-2">
             <div className="truncate font-semibold hover:underline cursor-pointer" title={current.title}>{current.title}</div>
-            <button
-              onClick={toggleFavorite}
-              className={`shrink-0 transition-colors ${isFav ? 'text-primary' : 'text-textSecondary hover:text-white'}`}
-              title={isFav ? "Quitar de favoritos" : "Añadir a favoritos"}
-            >
-              <Heart size={16} fill={isFav ? "currentColor" : "none"} />
-            </button>
+            <div className="flex items-center gap-3 shrink-0">
+              <button
+                onClick={toggleFavorite}
+                className={`transition-colors ${isFav ? 'text-primary' : 'text-textSecondary hover:text-white'}`}
+                title={isFav ? "Quitar de favoritos" : "Añadir a favoritos"}
+              >
+                <Heart size={16} fill={isFav ? "currentColor" : "none"} />
+              </button>
+              
+              {/* Mobile Lyrics Button */}
+              <button
+                onClick={() => setShowLyrics(true)}
+                className="flex md:hidden text-textSecondary hover:text-white transition-all"
+                title="Letras"
+              >
+                <Mic2 size={16} />
+              </button>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <div className="text-xs text-textSecondary truncate">{current.author}</div>

@@ -18,6 +18,14 @@ export default function LyricsOverlay({ isOpen, onClose }) {
     const [searchResults, setSearchResults] = useState([]);
     const [searching, setSearching] = useState(false);
 
+    // Format seconds to mm:ss
+    const formatDuration = (seconds) => {
+        if (!seconds) return '--:--';
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
+
     // Fetch lyrics when song changes
     useEffect(() => {
         if (!isOpen || !current) return;
@@ -186,7 +194,10 @@ export default function LyricsOverlay({ isOpen, onClose }) {
                                     >
                                         <div className="flex-1 min-w-0 pr-4">
                                             <h4 className="text-white font-bold truncate">{result.trackName}</h4>
-                                            <p className="text-textSecondary text-sm truncate">{result.artistName} • {result.albumName}</p>
+                                            <p className="text-textSecondary text-sm truncate">
+                                                {result.artistName} • {result.albumName ? result.albumName + ' • ' : ''}
+                                                <span className="text-primary/80 font-mono">{formatDuration(result.duration)}</span>
+                                            </p>
                                         </div>
                                         <div className="flex items-center gap-3 shrink-0">
                                             {result.hasSynced && (
