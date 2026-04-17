@@ -20,6 +20,7 @@ export default function PlayerPage() {
   const { active } = usePlayerStore(state => state.state);
 
   const [view, setView] = useState('player'); // 'player', 'history', 'playlists', 'playlist-details'
+  const [playerSubView, setPlayerSubView] = useState('search'); // 'search', 'queue' (only for mobile)
   const [selectedPlaylistId, setSelectedPlaylistId] = useState(null);
 
 
@@ -72,11 +73,33 @@ export default function PlayerPage() {
             </div>
           </div>
 
-          <div className="p-4 md:p-6 overflow-y-auto flex-1 pb-24 md:pb-6">
+          <div className="p-4 md:p-6 overflow-y-auto flex-1 pb-24 md:pb-6 relative flex flex-col">
             {view === 'player' ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
-                <Search guildId={guildId} />
-                <Queue />
+              <div className="flex-1 flex flex-col min-h-0">
+                {/* Mobile Sub-Navigation for Player (Search vs Queue) */}
+                <div className="md:hidden flex p-1 bg-surfaceHighlight/30 rounded-2xl mb-6 self-center w-fit">
+                    <button 
+                        onClick={() => setPlayerSubView('search')}
+                        className={`px-6 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${playerSubView === 'search' ? 'bg-primary text-white shadow-lg' : 'text-textSecondary hover:text-white'}`}
+                    >
+                        Buscador
+                    </button>
+                    <button 
+                        onClick={() => setPlayerSubView('queue')}
+                        className={`px-6 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${playerSubView === 'queue' ? 'bg-primary text-white shadow-lg' : 'text-textSecondary hover:text-white'}`}
+                    >
+                        Cola
+                    </button>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full flex-1">
+                  <div className={`${playerSubView === 'search' ? 'block' : 'hidden md:block'} h-full`}>
+                    <Search guildId={guildId} />
+                  </div>
+                  <div className={`${playerSubView === 'queue' ? 'block' : 'hidden md:block'} h-full min-h-0`}>
+                    <Queue />
+                  </div>
+                </div>
               </div>
             ) : view === 'history' ? (
               <History guildId={guildId} />
