@@ -257,13 +257,18 @@ export default function PlaylistDetails({ playlistId, onBack }) {
                 <DragDropContext onDragEnd={handleReorder}>
                     <Droppable droppableId="playlist-tracks" isDropDisabled={!isCreator}>
                         {(provided) => (
+            {/* Tracks List */}
+            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                <DragDropContext onDragEnd={handleReorder}>
+                    <Droppable droppableId="playlist-tracks" isDropDisabled={!isCreator}>
+                        {(provided) => (
                             <div 
                                 {...provided.droppableProps}
                                 ref={provided.innerRef}
-                                className="space-y-2 pb-20"
+                                className="space-y-1 pb-20 w-full"
                             >
                                 {/* Desktop Header (Hidden on Mobile) */}
-                                <div className="hidden md:grid grid-cols-[48px_48px_1fr_1fr_48px_80px_48px] gap-4 px-4 py-2 text-[11px] text-textSecondary uppercase tracking-widest font-bold border-b border-white/5 mb-2">
+                                <div className="hidden md:grid grid-cols-[40px_40px_4fr_3fr_40px_70px_40px] gap-4 px-4 py-2 text-[11px] text-textSecondary uppercase tracking-widest font-bold border-b border-white/5 mb-2">
                                     <span>#</span>
                                     <span></span>
                                     <span>Título</span>
@@ -285,14 +290,14 @@ export default function PlaylistDetails({ playlistId, onBack }) {
                                                 ref={provided.innerRef}
                                                 {...provided.draggableProps}
                                                 onClick={() => handlePlayTrack(track)}
-                                                className={`flex md:grid md:grid-cols-[48px_48px_1fr_1fr_48px_80px_48px] items-center gap-4 p-3 md:p-2 rounded-2xl md:rounded-xl group transition-all cursor-pointer border border-transparent ${
+                                                className={`flex md:grid md:grid-cols-[40px_40px_4fr_3fr_40px_70px_40px] items-center gap-4 p-3 md:p-2 rounded-2xl md:rounded-xl group transition-all cursor-pointer border border-transparent ${
                                                     snapshot.isDragging 
                                                         ? 'bg-surfaceHighlight shadow-2xl scale-[1.02] border-white/20 z-[200]' 
                                                         : 'hover:bg-white/5'
                                                 }`}
                                             >
                                                 {/* Index / Play Icon */}
-                                                <div className="hidden md:flex items-center justify-center text-textSecondary font-mono text-sm">
+                                                <div className="hidden md:flex items-center justify-center text-textSecondary font-mono text-sm min-w-0">
                                                     <span className="group-hover:hidden">{i + 1}</span>
                                                     <Play size={14} className="hidden group-hover:block text-primary fill-primary" />
                                                 </div>
@@ -301,15 +306,15 @@ export default function PlaylistDetails({ playlistId, onBack }) {
                                                 {isCreator ? (
                                                     <div 
                                                         {...provided.dragHandleProps}
-                                                        className="text-textSecondary opacity-40 hover:opacity-100 cursor-grab active:cursor-grabbing p-1"
+                                                        className="text-textSecondary opacity-40 hover:opacity-100 cursor-grab active:cursor-grabbing p-1 flex items-center justify-center min-w-0"
                                                     >
                                                         <GripVertical size={16} />
                                                     </div>
                                                 ) : <div className="hidden md:block"></div>}
 
                                                 {/* Track Info (Artwork + Title + Author) */}
-                                                <div className="flex items-center gap-3 flex-1 min-w-0">
-                                                    <div className="w-12 h-12 md:w-10 md:h-10 bg-surface rounded-xl md:rounded-lg flex items-center justify-center shrink-0 shadow-lg">
+                                                <div className="flex items-center gap-3 flex-1 md:flex-none min-w-0">
+                                                    <div className="w-12 h-12 md:w-10 md:h-10 bg-surface rounded-xl md:rounded-lg flex items-center justify-center shrink-0 shadow-lg relative overflow-hidden">
                                                         {track.artwork_url ? (
                                                             <img src={track.artwork_url} className="w-full h-full object-cover rounded-xl md:rounded-lg" alt="" />
                                                         ) : (
@@ -317,18 +322,18 @@ export default function PlaylistDetails({ playlistId, onBack }) {
                                                         )}
                                                     </div>
                                                     <div className="flex-1 min-w-0">
-                                                        <div className="font-bold md:font-semibold text-white truncate text-base md:text-sm">{track.title}</div>
-                                                        <div className="text-xs text-textSecondary md:hidden truncate mt-0.5">{track.author}</div>
+                                                        <div className="font-bold md:font-semibold text-white truncate text-base md:text-sm leading-tight">{track.title}</div>
+                                                        <div className="text-xs text-textSecondary md:hidden truncate mt-0.5 opacity-60">{track.author}</div>
                                                     </div>
                                                 </div>
 
                                                 {/* Desktop Author Column */}
-                                                <div className="hidden md:block text-textSecondary text-xs truncate">
+                                                <div className="hidden md:block text-textSecondary text-xs truncate min-w-0">
                                                     {track.author}
                                                 </div>
 
                                                 {/* Favorite Button */}
-                                                <div className="flex items-center justify-center">
+                                                <div className="flex items-center justify-center min-w-0">
                                                     <button 
                                                         onClick={(e) => handleToggleFavorite(e, track)}
                                                         className={`p-2 rounded-full transition-colors ${favUris.has(track.uri || track.track_uri) ? 'text-primary' : 'text-textSecondary hover:text-white hover:bg-white/10'}`}
@@ -338,19 +343,19 @@ export default function PlaylistDetails({ playlistId, onBack }) {
                                                 </div>
 
                                                 {/* Duration */}
-                                                <div className="text-right font-mono text-xs md:text-sm text-textSecondary pr-2">
+                                                <div className="text-right font-mono text-xs md:text-sm text-textSecondary pr-2 min-w-0">
                                                     {formatTime(track.duration)}
                                                 </div>
 
                                                 {/* Delete Button (Creator only) */}
                                                 {isCreator && (
-                                                    <div className="hidden md:flex items-center justify-end">
+                                                    <div className="hidden md:flex items-center justify-end min-w-0">
                                                         <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 handleDeleteTrack(track.id);
                                                             }}
-                                                            className="opacity-0 group-hover:opacity-100 p-2 hover:text-red-500 transition-all rounded-lg hover:bg-red-500/10"
+                                                            className="px-2 py-1 text-textSecondary hover:text-red-500 transition-all rounded-lg opacity-0 md:group-hover:opacity-100"
                                                         >
                                                             <Trash2 size={16} />
                                                         </button>

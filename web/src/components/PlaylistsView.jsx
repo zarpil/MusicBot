@@ -34,10 +34,10 @@ export default function PlaylistsView({ guildId, onSelect }) {
 
     return (
         <div className="flex flex-col h-full overflow-hidden">
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex flex-col md:flex-row items-center md:items-start justify-between mb-8 gap-4 text-center md:text-left">
                 <div>
-                    <h2 className="text-3xl font-bold mb-1">Listas del Servidor</h2>
-                    <p className="text-textSecondary text-sm">Escucha las colecciones creadas por la comunidad.</p>
+                    <h2 className="text-2xl md:text-3xl font-bold mb-1">Listas del Servidor</h2>
+                    <p className="text-textSecondary text-xs md:text-sm">Escucha las colecciones creadas por la comunidad.</p>
                 </div>
             </div>
 
@@ -46,16 +46,16 @@ export default function PlaylistsView({ guildId, onSelect }) {
                    <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6">
                         <Library size={40} className="text-textSecondary opacity-20" />
                    </div>
-                   <h3 className="text-xl font-bold mb-2">No hay listas aún</h3>
+                   <h3 className="text-xl font-bold mb-2 text-white">No hay listas aún</h3>
                    <p className="text-textSecondary max-w-sm">Guarda tu cola actual como una lista para que aparezca aquí.</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 overflow-y-auto pr-2 custom-scrollbar pb-12">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 md:gap-6 overflow-y-auto pr-2 custom-scrollbar pb-32 md:pb-12">
                     {playlists.map((pl) => (
                         <div 
                             key={pl.id}
                             onClick={() => onSelect(pl.id)}
-                            className="group bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/10 p-4 rounded-3xl transition-all cursor-pointer relative"
+                            className="group bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/10 p-3 md:p-4 rounded-2xl md:rounded-3xl transition-all cursor-pointer relative"
                         >
                             <div className="aspect-square w-full mb-4 relative shadow-2xl">
                                 {pl.creator_avatar ? (
