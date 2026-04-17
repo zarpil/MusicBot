@@ -187,9 +187,9 @@ export default function PlaylistDetails({ playlistId, onBack }) {
     const totalDuration = playlist.tracks?.reduce((acc, t) => acc + (t.duration || 0), 0) || 0;
 
     return (
-        <div className="flex flex-col h-full overflow-hidden">
+        <div className="flex flex-col">
             {/* Header */}
-            <div className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8 mb-8">
+            <div className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8 mb-8 shrink-0">
                 <div className="relative group w-48 h-48 md:w-56 md:h-56 shrink-0 shadow-2xl">
                     {playlist.creator_avatar ? (
                         <img src={playlist.creator_avatar} className="w-full h-full object-cover rounded-[2rem] md:rounded-3xl" alt="" />
@@ -255,7 +255,7 @@ export default function PlaylistDetails({ playlistId, onBack }) {
             </div>
 
             {/* Tracks List */}
-            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+            <div className="pr-2">
                 <DragDropContext onDragEnd={handleReorder}>
                     <Droppable droppableId="playlist-tracks" isDropDisabled={!isCreator}>
                         {(provided) => (

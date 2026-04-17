@@ -93,8 +93,16 @@ function initWsServer(httpServer, getManager, discordClient) {
 
           case 'SKIP':
             if (player) {
+              try {
                 await player.skip();
                 syncState(discordClient, player);
+              } catch (err) {
+                let msg = err.message;
+                if (msg.includes("Can't skip more than the queue size")) {
+                  msg = "No hay más canciones en la cola para saltar.";
+                }
+                send(ws, { type: 'ERROR', message: msg });
+              }
             }
             break;
 
