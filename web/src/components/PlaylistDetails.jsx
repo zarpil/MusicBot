@@ -252,6 +252,8 @@ export default function PlaylistDetails({ playlistId, onBack }) {
                         )}
                     </div>
                 </div>
+            </div>
+
             {/* Tracks List */}
             <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
                 <DragDropContext onDragEnd={handleReorder}>
