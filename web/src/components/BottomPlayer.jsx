@@ -203,7 +203,6 @@ export default function BottomPlayer() {
               onMouseDown={handleSeekStart}
               onInput={handleSeekChange}
               onMouseUp={handleSeekEnd}
-              onMouseUp={handleSeekEnd}
               onTouchStart={handleSeekStart}
               onTouchEnd={handleSeekEnd}
               className="absolute w-full h-4 opacity-0 cursor-pointer accent-primary"

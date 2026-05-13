@@ -32,19 +32,21 @@ function isSimilar(s1, s2) {
 function cleanName(text) {
     if (!text) return '';
     
-    // 1. Artist-specific cleaning (YouTube "Topic" channels)
-    text = text.replace(/\s*-\s*Topic\s*$/gi, '');
+    // 1. Artist-specific cleaning (YouTube "Topic" channels and VEVO)
+    text = text.replace(/\s*-\s*Topic\s*$/gi, '')
+               .replace(/\s*VEVO\s*$/gi, '');
 
-    // 2. Extra metadata removal (Hashtags, Social Credits)
+    // 2. Extra metadata removal (Hashtags, Social Credits, Quality)
     text = text
-        .replace(/#\w+/g, '') // Remove hashtags like #drill #official
+        .replace(/#\w+/g, '') // Remove hashtags
         .replace(/@\w+/g, '') // Remove user handles
-        .replace(/\b(shot\.?|directed|dir\.?|produced|prod\.?|by|edit|music|video)\s+by\b.*$/gi, '') // Remove visual/social credits
-        .replace(/\b(official\s+video|official\s+audio|official\s+lyric\s+video|video\s+oficial|videoclip)\b/gi, '');
+        .replace(/\b(shot\.?|directed|dir\.?|produced|prod\.?|by|edit|music|video)\s+by\b.*$/gi, '') 
+        .replace(/\b(official\s+video|official\s+audio|official\s+lyric\s+video|video\s+oficial|videoclip|music\s+video)\b/gi, '');
 
     // 3. Extract title if format is "Artist - Title" (common in YT titles)
     if (text.includes(' - ')) {
         const parts = text.split(' - ');
+        // If there are multiple parts, usually the last one is the title
         text = parts[parts.length - 1];
     }
 
@@ -55,6 +57,7 @@ function cleanName(text) {
         .replace(/\[.*?\]/g, '')      // Text in brackets
         .replace(/\bfeat\..*?\b/gi, '')
         .replace(/\bft\..*?\b/gi, '')
+        .replace(/\bx\b/gi, '')       // Collaborative "x"
         .replace(/ - Remastered\b/gi, '')
         .replace(/ - HD\b/gi, '')
         .replace(/\s+/g, ' ')
@@ -243,15 +246,21 @@ router.get('/search', async (req, res) => {
 
     try {
         const axiosConfig = {
-            headers: { 'User-Agent': 'TussiMusicBot/3.0 (ManualSearcher)' },
-            timeout: 5000
+            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' },
+            timeout: 8000
         };
+        
+        console.log(`[Lyrics/Search] Searching for: "${q}"`);
         const searchRes = await axios.get('https://lrclib.net/api/search', {
             ...axiosConfig,
             params: { q }
         });
 
-        const results = (searchRes.data || []).map(item => ({
+        if (!searchRes.data || !Array.isArray(searchRes.data)) {
+            return res.json([]);
+        }
+
+        const results = searchRes.data.map(item => ({
             id: item.id,
             trackName: item.trackName,
             artistName: item.artistName,
@@ -259,7 +268,6 @@ router.get('/search', async (req, res) => {
             duration: item.duration,
             instrumental: !item.plainLyrics && !item.syncedLyrics,
             hasSynced: !!item.syncedLyrics,
-            // We include the data so the frontend can select it immediately
             data: {
                 id: item.id,
                 trackName: item.trackName,
@@ -272,8 +280,14 @@ router.get('/search', async (req, res) => {
 
         res.json(results);
     } catch (err) {
-        console.error('[Lyrics/Search] Error:', err.message);
-        res.status(500).json({ error: 'Error searching lyrics' });
+        const status = err.response?.status || 500;
+        const message = err.response?.data?.error || err.message;
+        console.error(`[Lyrics/Search] Error ${status}:`, message);
+        
+        res.status(status).json({ 
+            error: 'Error al buscar letras en el servidor externo',
+            details: message
+        });
     }
 });
 
