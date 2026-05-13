@@ -109,8 +109,8 @@ async function getLyricsFromLRCLIB(artist, title, durationMs) {
     }
 
     const axiosConfig = {
-        headers: { 'User-Agent': 'TussiMusicBot/3.0 (PrecisionHunterV3)' },
-        timeout: 4000
+        headers: { 'User-Agent': 'TussiMusicBot/3.0 (PrecisionHunter)' },
+        timeout: 10000 // Increased timeout
     };
 
     // Strategy 1: Strict Get (High precision)
@@ -241,13 +241,16 @@ router.get('/', async (req, res) => {
 });
 
 router.get('/search', async (req, res) => {
-    const { q } = req.query;
+    let { q } = req.query;
     if (!q) return res.status(400).json({ error: 'Search query is required' });
+
+    // Sanitize query for LRCLIB (remove excessive special chars that might cause 500 on their end)
+    q = q.replace(/[()\[\]]/g, ' ').replace(/\s+/g, ' ').trim();
 
     try {
         const axiosConfig = {
-            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' },
-            timeout: 8000
+            headers: { 'User-Agent': 'TussiMusicBot/3.0' },
+            timeout: 10000
         };
         
         console.log(`[Lyrics/Search] Searching for: "${q}"`);
@@ -282,11 +285,19 @@ router.get('/search', async (req, res) => {
     } catch (err) {
         const status = err.response?.status || 500;
         const message = err.response?.data?.error || err.message;
-        console.error(`[Lyrics/Search] Error ${status}:`, message);
+        
+        console.error('===== LYRICS SEARCH ERROR DEBUG =====');
+        console.error(`URL: https://lrclib.net/api/search?q=${q}`);
+        console.error(`Status: ${status}`);
+        console.error(`Message: ${message}`);
+        if (err.response?.data) console.error('Response Data:', JSON.stringify(err.response.data));
+        console.error('Stack:', err.stack);
+        console.error('======================================');
         
         res.status(status).json({ 
             error: 'Error al buscar letras en el servidor externo',
-            details: message
+            details: message,
+            debug_info: { status, url: `https://lrclib.net/api/search?q=${q}` }
         });
     }
 });
