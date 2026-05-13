@@ -32,6 +32,12 @@ module.exports = {
       }
     });
  
-    return interaction.reply(newPausedState ? '⏸️ Pausado.' : '▶️ Reanudado.');
+    const guildData = db.getGuild(interaction.guildId);
+    const isSetupChannel = guildData && guildData.setup_channel_id === interaction.channelId;
+
+    return interaction.reply({ 
+      content: newPausedState ? '⏸️ Pausado.' : '▶️ Reanudado.', 
+      ephemeral: isSetupChannel 
+    });
   },
 };

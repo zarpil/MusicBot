@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { ArrowLeft, Play, Trash2, Music, User, Clock, Loader2, Plus, Search as SearchIcon, X, GripVertical, Heart } from 'lucide-react';
+import { ArrowLeft, Play, Trash2, Music, User, Clock, Loader2, Plus, Search as SearchIcon, X, GripVertical, Heart, Check } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import usePlayerStore from '../store/usePlayerStore';
 import useAuthStore from '../store/useAuthStore';
@@ -416,10 +416,13 @@ export default function PlaylistDetails({ playlistId, onBack }) {
                                 </div>
                             )}
 
-                            {searchResults.map((track, i) => (
+                            {searchResults.map((track, i) => {
+                                const isInPlaylist = playlist.tracks?.some(t => t.uri === track.uri);
+                                
+                                return (
                                 <div 
                                     key={i}
-                                    className="flex items-center gap-4 p-3 hover:bg-white/5 rounded-2xl group transition-all border border-transparent hover:border-white/5"
+                                    className={`flex items-center gap-4 p-3 hover:bg-white/5 rounded-2xl group transition-all border border-transparent hover:border-white/5 ${isInPlaylist ? 'opacity-70' : ''}`}
                                 >
                                     <div className="w-12 h-12 bg-surface rounded-xl flex items-center justify-center shrink-0 overflow-hidden shadow-lg">
                                          {track.artworkUrl ? (
@@ -440,15 +443,26 @@ export default function PlaylistDetails({ playlistId, onBack }) {
                                         >
                                             <Heart size={16} fill={favUris.has(track.uri) ? "currentColor" : "none"} />
                                         </button>
-                                        <button 
-                                            onClick={() => handleAddToPlaylist(track)}
-                                            className="px-5 py-2 bg-primary hover:bg-pink-400 text-black rounded-full text-xs font-bold transition-all flex items-center gap-2 transform active:scale-95 shadow-lg shadow-primary/10"
-                                        >
-                                            <Plus size={14} /> AÑADIR
-                                        </button>
+                                        
+                                        {isInPlaylist ? (
+                                            <button 
+                                                disabled
+                                                className="px-5 py-2 bg-white/10 text-textSecondary rounded-full text-xs font-bold flex items-center gap-2 cursor-default"
+                                            >
+                                                <Check size={14} /> AÑADIDA
+                                            </button>
+                                        ) : (
+                                            <button 
+                                                onClick={() => handleAddToPlaylist(track)}
+                                                className="px-5 py-2 bg-primary hover:bg-pink-400 text-black rounded-full text-xs font-bold transition-all flex items-center gap-2 transform active:scale-95 shadow-lg shadow-primary/10"
+                                            >
+                                                <Plus size={14} /> AÑADIR
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
                     {/* Backdrop Click */}

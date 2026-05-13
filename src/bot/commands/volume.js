@@ -28,6 +28,12 @@ module.exports = {
       await player.setVolume(level);
     }
 
-    return interaction.reply(`🔊 Volumen establecido al **${level}%**.`);
+    const guildData = db.getGuild(interaction.guildId);
+    const isSetupChannel = guildData && guildData.setup_channel_id === interaction.channelId;
+
+    return interaction.reply({ 
+      content: `🔊 Volumen establecido al **${level}%**.`, 
+      ephemeral: isSetupChannel 
+    });
   },
 };

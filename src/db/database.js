@@ -204,6 +204,11 @@ function removeTrackFromPlaylist(trackId) {
   return getDb().prepare('DELETE FROM playlist_tracks WHERE id = ?').run(trackId);
 }
 
+function isTrackInPlaylist(playlistId, uri) {
+  const row = getDb().prepare('SELECT id FROM playlist_tracks WHERE playlist_id = ? AND uri = ?').get(playlistId, uri);
+  return !!row;
+}
+
 function reorderPlaylistTracks(playlistId, trackIds) {
   const db = getDb();
   const update = db.prepare('UPDATE playlist_tracks SET position = ? WHERE id = ? AND playlist_id = ?');
@@ -289,6 +294,7 @@ module.exports = {
   getPlaylistTracks,
   addTrackToPlaylist,
   removeTrackFromPlaylist,
+  isTrackInPlaylist,
   reorderPlaylistTracks,
   addHistoryEntry,
   getHistory,

@@ -133,7 +133,7 @@ export default function BottomPlayer() {
               >
                 <Heart size={16} fill={isFav ? "currentColor" : "none"} />
               </button>
-              
+
               {/* Mobile Lyrics Button */}
               <button
                 onClick={() => setShowLyrics(!showLyrics)}
@@ -276,8 +276,8 @@ export default function BottomPlayer() {
                   key={f.id}
                   onClick={() => toggleFilter(f.id)}
                   className={`flex flex-col items-start p-3 rounded-xl transition-all border ${filters?.[f.id]
-                      ? 'bg-primary/20 border-primary/40 text-white'
-                      : 'bg-white/5 border-transparent text-textSecondary hover:bg-white/10 hover:text-white'
+                    ? 'bg-primary/20 border-primary/40 text-white'
+                    : 'bg-white/5 border-transparent text-textSecondary hover:bg-white/10 hover:text-white'
                     }`}
                 >
                   <span className="text-sm font-semibold">{f.label}</span>

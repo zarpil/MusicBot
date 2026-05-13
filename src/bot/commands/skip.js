@@ -13,7 +13,10 @@ module.exports = {
  
     if (!player) return interaction.reply({ content: 'No hay ninguna reproducción activa.', ephemeral: true });
  
+    const guildData = db.getGuild(interaction.guildId);
+    const isSetupChannel = guildData && guildData.setup_channel_id === interaction.channelId;
+
     await player.skip();
-    return interaction.reply('⏭️ Canción saltada.');
+    return interaction.reply({ content: '⏭️ Canción saltada.', ephemeral: isSetupChannel });
   },
 };

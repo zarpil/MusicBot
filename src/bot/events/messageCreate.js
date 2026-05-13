@@ -3,6 +3,7 @@
 const { Events } = require('discord.js');
 const { getManager } = require('../../lavalink/manager');
 const { ensurePlayer } = require('../utils/voiceUtils');
+const { syncState } = require('../../utils/stateSync');
 const db = require('../../db/database');
 
 module.exports = {
@@ -47,6 +48,9 @@ module.exports = {
             if (!player.playing && !player.paused) {
                 await player.play();
             }
+
+            // Sync state to update the panel immediately
+            syncState(client, player);
 
             // The panel will be updated by the manager events (trackStart, etc)
         } catch (err) {

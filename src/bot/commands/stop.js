@@ -13,8 +13,11 @@ module.exports = {
  
     if (!player) return interaction.reply({ content: 'No hay ninguna reproducción activa.', ephemeral: true });
  
+    const guildData = db.getGuild(interaction.guildId);
+    const isSetupChannel = guildData && guildData.setup_channel_id === interaction.channelId;
+
     player.queue.tracks = [];
     await player.stopPlaying();
-    return interaction.reply('🛑 Reproducción detenida y cola vaciada.');
+    return interaction.reply({ content: '🛑 Reproducción detenida y cola vaciada.', ephemeral: isSetupChannel });
   },
 };

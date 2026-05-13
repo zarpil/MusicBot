@@ -43,10 +43,14 @@ router.post('/', (req, res) => {
 
     const playlist = db.createPlaylist(guildId, name, description || '', creator);
 
-    // If tracks provided, add them
+    // If tracks provided, add them (avoid duplicates)
     if (tracks && Array.isArray(tracks)) {
+      const addedUris = new Set();
       for (const t of tracks) {
-        db.addTrackToPlaylist(playlist.id, t);
+        if (!addedUris.has(t.uri)) {
+          db.addTrackToPlaylist(playlist.id, t);
+          addedUris.add(t.uri);
+        }
       }
     }
 
@@ -85,6 +89,11 @@ router.post('/:id/tracks', (req, res) => {
       }
   
       const { track } = req.body;
+      
+      if (db.isTrackInPlaylist(req.params.id, track.uri)) {
+        return res.status(400).json({ error: 'Esta canción ya está en la lista' });
+      }
+
       db.addTrackToPlaylist(req.params.id, track);
       res.json({ success: true });
     } catch (err) {

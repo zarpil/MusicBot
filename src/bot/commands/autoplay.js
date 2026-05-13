@@ -22,6 +22,12 @@ module.exports = {
     player.set('autoplay', newAutoplay);
     db.upsertGuild(interaction.guildId, { autoplay: newAutoplay ? 1 : 0 });
 
-    return interaction.reply(newAutoplay ? '🔁 Reproducción automática **ACTIVADA**.' : '🔁 Reproducción automática **DESACTIVADA**.');
+    const guildData = db.getGuild(interaction.guildId);
+    const isSetupChannel = guildData && guildData.setup_channel_id === interaction.channelId;
+
+    return interaction.reply({ 
+      content: newAutoplay ? '🔁 Reproducción automática **ACTIVADA**.' : '🔁 Reproducción automática **DESACTIVADA**.', 
+      ephemeral: isSetupChannel 
+    });
   },
 };

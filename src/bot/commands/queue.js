@@ -37,6 +37,9 @@ module.exports = {
       }
     }
 
-    await interaction.reply({ embeds: [embed] });
+    const guildData = db.getGuild(interaction.guildId);
+    const isSetupChannel = guildData && guildData.setup_channel_id === interaction.channelId;
+
+    await interaction.reply({ embeds: [embed], ephemeral: isSetupChannel });
   },
 };

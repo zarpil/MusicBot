@@ -4,6 +4,7 @@ const { SlashCommandBuilder } = require('discord.js');
 const { getManager } = require('../../lavalink/manager');
 const db = require('../../db/database');
 const authStore = require('../utils/authStore');
+const { syncState } = require('../../utils/stateSync');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -17,8 +18,11 @@ module.exports = {
   async execute(interaction) {
     let query = interaction.options.getString('buscar') || interaction.options.getString('query');
 
-    // Make the response private if asking for PIN, public if queuing music
-    if (!query) {
+    const guildData = db.getGuild(interaction.guildId);
+    const isSetupChannel = guildData && guildData.setup_channel_id === interaction.channelId;
+
+    // Make the response private if asking for PIN or if in the setup channel
+    if (!query || isSetupChannel) {
       await interaction.deferReply({ ephemeral: true });
     } else {
       await interaction.deferReply();
@@ -99,6 +103,8 @@ module.exports = {
       if (!player.queue.current) {
         await player.play();
       }
+
+      syncState(interaction.client, player);
 
       return interaction.editReply(`✅ En cola: **${track.info.title}**`);
 
