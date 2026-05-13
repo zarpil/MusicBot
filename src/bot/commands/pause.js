@@ -1,6 +1,6 @@
 'use strict';
 
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const { getManager } = require('../../lavalink/manager');
 const { getWsServer } = require('../../api/ws/wsServer');
 
@@ -12,7 +12,7 @@ module.exports = {
     const manager = getManager();
     const player = manager.players.get(interaction.guildId);
  
-    if (!player) return interaction.reply({ content: 'No hay ninguna reproducción activa.', ephemeral: true });
+    if (!player) return interaction.reply({ content: 'No hay ninguna reproducción activa.', flags: [MessageFlags.Ephemeral] });
  
     const newPausedState = !player.paused;
     await player.pause(newPausedState);
@@ -37,7 +37,7 @@ module.exports = {
 
     return interaction.reply({ 
       content: newPausedState ? '⏸️ Pausado.' : '▶️ Reanudado.', 
-      ephemeral: isSetupChannel 
+      flags: isSetupChannel ? [MessageFlags.Ephemeral] : [] 
     });
   },
 };

@@ -1,6 +1,6 @@
 'use strict';
 
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const { getManager } = require('../../lavalink/manager');
 const db = require('../../db/database');
 
@@ -13,7 +13,7 @@ module.exports = {
     const player = manager.players.get(interaction.guildId);
 
     if (!player) {
-      return interaction.reply({ content: 'No hay ningún reproductor activo. Reproduce algo primero.', ephemeral: true });
+      return interaction.reply({ content: 'No hay ningún reproductor activo. Reproduce algo primero.', flags: [MessageFlags.Ephemeral] });
     }
 
     const currentAutoplay = player.get('autoplay') || false;
@@ -27,7 +27,7 @@ module.exports = {
 
     return interaction.reply({ 
       content: newAutoplay ? '🔁 Reproducción automática **ACTIVADA**.' : '🔁 Reproducción automática **DESACTIVADA**.', 
-      ephemeral: isSetupChannel 
+      flags: isSetupChannel ? [MessageFlags.Ephemeral] : [] 
     });
   },
 };

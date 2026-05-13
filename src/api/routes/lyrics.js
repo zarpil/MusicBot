@@ -2,6 +2,12 @@
 
 const { Router } = require('express');
 const axios = require('axios');
+const dns = require('node:dns');
+
+// Force IPv4 preference to avoid common Docker/VPS timeout issues
+if (dns.setDefaultResultOrder) {
+    dns.setDefaultResultOrder('ipv4first');
+}
 
 const router = Router();
 
@@ -110,7 +116,8 @@ async function getLyricsFromLRCLIB(artist, title, durationMs) {
 
     const axiosConfig = {
         headers: { 'User-Agent': 'TussiMusicBot/3.0 (PrecisionHunter)' },
-        timeout: 10000 // Increased timeout
+        timeout: 20000, // 20 seconds
+        family: 4      // Force IPv4
     };
 
     // Strategy 1: Strict Get (High precision)
@@ -250,7 +257,8 @@ router.get('/search', async (req, res) => {
     try {
         const axiosConfig = {
             headers: { 'User-Agent': 'TussiMusicBot/3.0' },
-            timeout: 10000
+            timeout: 20000, // 20 seconds
+            family: 4      // Force IPv4
         };
         
         console.log(`[Lyrics/Search] Searching for: "${q}"`);

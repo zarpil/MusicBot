@@ -1,6 +1,6 @@
 'use strict';
 
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const { getManager } = require('../../lavalink/manager');
 const db = require('../../db/database');
 const authStore = require('../utils/authStore');
@@ -23,7 +23,7 @@ module.exports = {
 
     // Make the response private if asking for PIN or if in the setup channel
     if (!query || isSetupChannel) {
-      await interaction.deferReply({ ephemeral: true });
+      await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
     } else {
       await interaction.deferReply();
     }

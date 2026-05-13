@@ -1,6 +1,6 @@
 'use strict';
 
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const { getManager } = require('../../lavalink/manager');
 const db = require('../../db/database');
 
@@ -33,7 +33,7 @@ module.exports = {
 
     return interaction.reply({ 
       content: `🔊 Volumen establecido al **${level}%**.`, 
-      ephemeral: isSetupChannel 
+      flags: isSetupChannel ? [MessageFlags.Ephemeral] : [] 
     });
   },
 };

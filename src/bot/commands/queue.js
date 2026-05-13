@@ -1,6 +1,6 @@
 'use strict';
 
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 const { getManager } = require('../../lavalink/manager');
 
 module.exports = {
@@ -12,12 +12,12 @@ module.exports = {
     const player = manager.players.get(interaction.guildId);
  
     if (!player) {
-      return interaction.reply({ content: 'No hay nada sonando ahora mismo.', ephemeral: true });
+      return interaction.reply({ content: 'No hay nada sonando ahora mismo.', flags: [MessageFlags.Ephemeral] });
     }
  
     const current = player.queue.current;
     if (!current) {
-      return interaction.reply({ content: 'No hay nada sonando ahora mismo.', ephemeral: true });
+      return interaction.reply({ content: 'No hay nada sonando ahora mismo.', flags: [MessageFlags.Ephemeral] });
     }
 
     const embed = new EmbedBuilder()
@@ -40,6 +40,6 @@ module.exports = {
     const guildData = db.getGuild(interaction.guildId);
     const isSetupChannel = guildData && guildData.setup_channel_id === interaction.channelId;
 
-    await interaction.reply({ embeds: [embed], ephemeral: isSetupChannel });
+    await interaction.reply({ embeds: [embed], flags: isSetupChannel ? [MessageFlags.Ephemeral] : [] });
   },
 };
