@@ -7,28 +7,56 @@
  * @param {import('discord.js').User} user
  */
 async function ensurePlayer(manager, guild, user) {
-    let player = manager.players.get(guild.id);
+    const member = await guild.members.fetch(user.id).catch(() => null);
+    const botVoiceChannelId = guild.members.me?.voice.channelId;
 
-    if (!player) {
-        const member = await guild.members.fetch(user.id).catch(() => null);
-        if (!member || !member.voice.channel) {
+    if (botVoiceChannelId) {
+        // El bot ya está en un canal de voz. Verificamos que el usuario esté en el mismo canal.
+        if (!member || member.voice.channelId !== botVoiceChannelId) {
+            throw new Error('Debes estar en el mismo canal de voz que el bot para reproducir música');
+        }
+
+        let player = manager.players.get(guild.id);
+        if (!player) {
+            player = manager.createPlayer({
+                guildId: guild.id,
+                voiceChannelId: botVoiceChannelId,
+                textChannelId: null,
+                selfDeaf: true,
+                selfMute: false,
+                shardId: guild.shardId,
+            });
+            await player.connect();
+        }
+        return player;
+    } else {
+        // El bot no está en ningún canal de voz.
+        if (!member || !member.voice.channelId) {
             throw new Error('Debes estar en un canal de voz para reproducir música');
         }
 
-        player = manager.createPlayer({
-            guildId: guild.id,
-            voiceChannelId: member.voice.channel.id,
-            textChannelId: null,
-            selfDeaf: true,
-            selfMute: false,
-            shardId: guild.shardId,
-        });
+        let player = manager.players.get(guild.id);
+        if (!player) {
+            player = manager.createPlayer({
+                guildId: guild.id,
+                voiceChannelId: member.voice.channelId,
+                textChannelId: null,
+                selfDeaf: true,
+                selfMute: false,
+                shardId: guild.shardId,
+            });
+        } else {
+            // Actualizamos el canal de voz del player existente
+            player.voiceChannelId = member.voice.channelId;
+            if (player.options) {
+                player.options.voiceChannelId = member.voice.channelId;
+            }
+        }
 
         await player.connect();
         console.log(`[VoiceUtils] Auto-joined ${user.username} in ${member.voice.channel.name}`);
+        return player;
     }
-
-    return player;
 }
 
 module.exports = { ensurePlayer };
