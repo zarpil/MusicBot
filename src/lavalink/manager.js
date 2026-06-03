@@ -13,6 +13,30 @@ let _manager = null;
  * Must call initManager(client) from bot ready event before using.
  */
 function createManager(discordClient) {
+  function startIdleTimeout(player) {
+    clearIdleTimeout(player);
+    const timeoutId = setTimeout(async () => {
+      try {
+        console.log(`[Lavalink] 5 minutes idle. Disconnecting from guild ${player.guildId}`);
+        if (player.connected) {
+          await player.disconnect();
+        }
+        await player.destroy();
+      } catch (err) {
+        console.error('[Lavalink] Error destroying player during idle timeout:', err);
+      }
+    }, 5 * 60 * 1000);
+    player.set('idleTimeoutId', timeoutId);
+  }
+
+  function clearIdleTimeout(player) {
+    const timeoutId = player.get('idleTimeoutId');
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      player.set('idleTimeoutId', null);
+    }
+  }
+
   _manager = new LavalinkManager({
     nodes: [
       {
@@ -48,6 +72,7 @@ function createManager(discordClient) {
     if (guild) {
       player.set('autoplay', !!guild.autoplay);
     }
+    startIdleTimeout(player);
   });
 
   // ── Node lifecycle logs ────────────────────────────────────────────────────
@@ -65,6 +90,7 @@ function createManager(discordClient) {
 
   _manager.on('trackStart', (player, track) => {
     console.log(`[Lavalink] trackStart: ${track?.info?.title} in ${player.guildId}`);
+    clearIdleTimeout(player);
     
     // Auto-sync across all platforms
     syncState(discordClient, player);
@@ -84,10 +110,12 @@ function createManager(discordClient) {
   });
 
   _manager.on('playerPause', (player) => {
+    startIdleTimeout(player);
     syncState(discordClient, player);
   });
 
   _manager.on('playerResume', (player) => {
+    clearIdleTimeout(player);
     syncState(discordClient, player);
   });
   
@@ -181,6 +209,11 @@ function createManager(discordClient) {
     player.set('lastAutoplayTrigger', now);
     
     await handleAutoplay(player, track);
+
+    if (!player.playing && player.queue.tracks.length === 0 && !player.queue.current) {
+      startIdleTimeout(player);
+    }
+
     syncState(discordClient, player);
   });
 
@@ -193,10 +226,16 @@ function createManager(discordClient) {
     player.set('lastAutoplayTrigger', now);
 
     await handleAutoplay(player, track);
+
+    if (!player.playing && player.queue.tracks.length === 0 && !player.queue.current) {
+      startIdleTimeout(player);
+    }
+
     syncState(discordClient, player);
   });
 
   _manager.on('playerDestroy', (player) => {
+    clearIdleTimeout(player);
     updateSetupPanel(discordClient, player.guildId, null);
     // WS broadcast for destroy
     try {
