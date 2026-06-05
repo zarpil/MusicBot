@@ -1,13 +1,71 @@
 {
   "errors": {
     "sameVoiceChannel": "❌ You must be in the same voice channel as the bot to play music",
-    "mustBeInVoice": "❌ You must be in a voice channel to play music"
+    "mustBeInVoice": "❌ You must be in a voice channel to play music",
+    "noPlayer": "❌ There is no active playback.",
+    "noActivePlayerAutoplay": "There is no active player. Play something first.",
+    "notSameVoiceControl": "❌ You must be in the same voice channel as the bot to use the controls.",
+    "noLavalinkNodes": "❌ No Lavalink nodes connected.",
+    "noResults": "No results found for `{query}`.",
+    "searchError": "An error occurred while searching for the song.",
+    "playError": "An error occurred while trying to play the song.",
+    "setupNoPermission": "❌ I could not create the channel. Please check my permissions.",
+    "commandError": "There was an error while executing this command!"
   },
   "commands": {
     "language": {
       "noPermission": "❌ You need Administrator permissions to change the language.",
       "invalidLanguage": "❌ Invalid language. Supported languages are: `es`, `en`.",
       "success": "✅ The server language has been changed to: **{lang}**."
+    },
+    "autoplay": {
+      "enabled": "🔁 Autoplay **ENABLED**.",
+      "disabled": "🔁 Autoplay **DISABLED**."
+    },
+    "pause": {
+      "paused": "⏸️ Playback paused.",
+      "resumed": "▶️ Playback resumed."
+    },
+    "play": {
+      "webAccessTitle": "🔐 **Web Panel Access**",
+      "webAccessDesc": "The bot has joined your channel. To control the music from your browser, go to:\n**{domain}**\n\nYour secret 6-digit PIN code is: `{pin}`\n*(This code expires in 5 minutes)*",
+      "webAccessDescButton": "To control the music from your browser, go to:\n**{domain}**\n\nYour secret PIN code is: `{pin}`\n*(Expires in 5 minutes)*",
+      "playlistAdded": "✅ Added playlist **{title}** ({count} songs).",
+      "enqueued": "✅ Enqueued: **{title}**"
+    },
+    "queue": {
+      "empty": "There is nothing playing right now.",
+      "title": "Playback queue for {guildName}",
+      "nowPlaying": "🎵 Now playing:",
+      "upNext": "📋 Up next:",
+      "footer": "Page {page} of {pages} | {total} songs in queue",
+      "moreSongs": "And {count} more songs..."
+    },
+    "setup": {
+      "success": "✅ Music channel successfully configured: {channel}",
+      "topic": "Control the bot's music by typing below or using the buttons."
+    },
+    "setupPanel": {
+      "title": "🎵 MUSIC PLAYER",
+      "noPlayingDesc": "There is nothing playing right now.\n\nType a **song name** or **URL** below to start playing.",
+      "nowPlaying": "🚀 **Now playing:**",
+      "author": "👤 Author",
+      "duration": "🕒 Duration",
+      "requestedBy": "📥 Requested by",
+      "upNext": "📜 Next in queue",
+      "live": "LIVE",
+      "statusPlaying": "▶️ PLAYING",
+      "statusPaused": "⏸️ PAUSED",
+      "footer": "Status: {status} | Volume: {volume}% | Autoplay: {autoplay} | Tussi Music | By @p0u"
+    },
+    "skip": {
+      "skipped": "⏭️ Song skipped."
+    },
+    "stop": {
+      "stopped": "🛑 Playback stopped and queue cleared."
+    },
+    "volume": {
+      "success": "🔊 Volume set to **{volume}%**."
     }
   }
 }

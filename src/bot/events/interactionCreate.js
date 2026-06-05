@@ -2,6 +2,7 @@
 
 const { Events } = require('discord.js');
 const { syncState } = require('../../utils/stateSync');
+const { t } = require('../../utils/i18n');
 
 module.exports = {
   name: Events.InteractionCreate,
@@ -20,20 +21,17 @@ module.exports = {
             const domain = process.env.PUBLIC_URL || 'https://tussi.zarpil.dev';
             
             return interaction.reply({
-                content: `🔐 **Acceso al Panel Web**\n\n` +
-                        `Para controlar la música desde tu navegador, entra a:\n` +
-                        `**${domain}**\n\n` +
-                        `Tu código PIN secreto es: \`${pin}\`\n` +
-                        `*(Expira en 5 minutos)*`,
+                content: t(interaction.guildId, 'commands.play.webAccessTitle') + '\n\n' +
+                        t(interaction.guildId, 'commands.play.webAccessDescButton', { domain, pin }),
                 ephemeral: true
             });
         }
 
-        if (!player) return interaction.reply({ content: '❌ El reproductor no está activo.', ephemeral: true });
+        if (!player) return interaction.reply({ content: t(interaction.guildId, 'errors.noPlayer'), ephemeral: true });
 
         const member = interaction.member;
         if (!member.voice.channelId || member.voice.channelId !== player.voiceChannelId) {
-            return interaction.reply({ content: '❌ Debes estar en el mismo canal de voz que el bot para usar los controles.', ephemeral: true });
+            return interaction.reply({ content: t(interaction.guildId, 'errors.notSameVoiceControl'), ephemeral: true });
         }
 
         await interaction.deferUpdate();
@@ -89,7 +87,7 @@ module.exports = {
       await command.execute(interaction);
     } catch (error) {
       console.error(`[Bot] Error executing ${interaction.commandName}:`, error);
-      const reply = { content: 'There was an error while executing this command!', ephemeral: true };
+      const reply = { content: t(interaction.guildId, 'errors.commandError'), ephemeral: true };
       if (interaction.replied || interaction.deferred) {
         await interaction.followUp(reply).catch(console.error);
       } else {

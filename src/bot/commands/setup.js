@@ -1,9 +1,10 @@
 'use strict';
 
-const { SlashCommandBuilder, PermissionFlagsBits, ChannelType, OverwriteType } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, ChannelType } = require('discord.js');
 const { getSetupEmbed, getSetupButtons } = require('../utils/setupPanel');
 const { getManager } = require('../../lavalink/manager');
 const db = require('../../db/database');
+const { t } = require('../../utils/i18n');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -25,7 +26,7 @@ module.exports = {
         channel = await guild.channels.create({
             name: '🎵-tussi-musica',
             type: ChannelType.GuildText,
-            topic: 'Controla la música del bot escribiendo aquí abajo o usando los botones.',
+            topic: t(guildId, 'commands.setup.topic'),
             permissionOverwrites: [
                 {
                     id: guild.roles.everyone,
@@ -35,11 +36,11 @@ module.exports = {
         });
     } catch (err) {
         console.error('[Setup] Error creating channel:', err);
-        return interaction.editReply('❌ No he podido crear el canal. Revisa mis permisos.');
+        return interaction.editReply(t(guildId, 'errors.setupNoPermission'));
     }
 
     // 2. Send the initial panel
-    const embed = getSetupEmbed(player);
+    const embed = getSetupEmbed(player, guildId);
     const buttons = getSetupButtons(player);
 
     const message = await channel.send({
@@ -50,6 +51,6 @@ module.exports = {
     // 3. Save to DB
     db.setSetupInfo(guildId, channel.id, message.id);
 
-    return interaction.editReply(`✅ Canal de música configurado con éxito: ${channel}`);
+    return interaction.editReply(t(guildId, 'commands.setup.success', { channel }));
   },
 };

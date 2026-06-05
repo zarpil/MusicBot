@@ -8,6 +8,7 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName('language')
     .setDescription('Change the language / Cambia el idioma')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addStringOption(option =>
       option.setName('lang')
         .setDescription('es / en')

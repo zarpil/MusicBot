@@ -5,6 +5,7 @@ const { getManager } = require('../../lavalink/manager');
 const db = require('../../db/database');
 const authStore = require('../utils/authStore');
 const { syncState } = require('../../utils/stateSync');
+const { t } = require('../../utils/i18n');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -30,7 +31,7 @@ module.exports = {
 
     const member = interaction.member;
     if (!member.voice.channelId) {
-      return interaction.editReply('¡Debes estar en un canal de voz para reproducir música!');
+      return interaction.editReply(t(interaction.guildId, 'errors.mustBeInVoice'));
     }
 
     const manager = getManager();
@@ -60,11 +61,8 @@ module.exports = {
       // Construct public URL, fallback to default or request host if we could inject it (we can't easily here)
       const domain = process.env.PUBLIC_URL || 'https://tussi.zarpil.dev'; 
       return interaction.editReply(
-        `🔐 **Acceso al Panel Web**\n\n` +
-        `El bot se ha unido a tu canal. Para controlar la música desde tu navegador, entra a:\n` +
-        `**${domain}**\n\n` +
-        `Tu código PIN secreto de 6 dígitos es: \`${pin}\`\n` +
-        `*(Este código expira en 5 minutos)*`
+        t(interaction.guildId, 'commands.play.webAccessTitle') + '\n\n' +
+        t(interaction.guildId, 'commands.play.webAccessDesc', { domain, pin })
       );
     }
 
@@ -72,18 +70,18 @@ module.exports = {
       console.log(`[Bot] Buscando: ${queryClean}`);
       
       const nodes = manager.nodeManager.nodes;
-      if (nodes.size === 0) return interaction.editReply('❌ No hay nodos de Lavalink conectados.');
+      if (nodes.size === 0) return interaction.editReply(t(interaction.guildId, 'errors.noLavalinkNodes'));
       const node = [...nodes.values()][0];
       
       const res = await node.search(queryClean, interaction.user);
       console.log(`[Bot] Resultado: ${res.loadType} (${res.tracks?.length || 0} pistas)`);
 
       if (res.loadType === 'empty') {
-        return interaction.editReply(`No se han encontrado resultados para \`${queryClean}\`.`);
+        return interaction.editReply(t(interaction.guildId, 'errors.noResults', { query: queryClean }));
       }
 
       if (res.loadType === 'error') {
-        return interaction.editReply('Ha ocurrido un error al buscar la canción.');
+        return interaction.editReply(t(interaction.guildId, 'errors.searchError'));
       }
 
       if (res.loadType === 'playlist') {
@@ -93,7 +91,7 @@ module.exports = {
         if (!player.playing) {
           await player.play({ track: res.tracks[0] });
         }
-        return interaction.editReply(`✅ Añadida la lista **${res.playlist.title}** (${res.tracks.length} canciones).`);
+        return interaction.editReply(t(interaction.guildId, 'commands.play.playlistAdded', { title: res.playlist.title, count: res.tracks.length }));
       }
 
       // If 'search' or 'track'
@@ -106,11 +104,11 @@ module.exports = {
 
       syncState(interaction.client, player);
 
-      return interaction.editReply(`✅ En cola: **${track.info.title}**`);
+      return interaction.editReply(t(interaction.guildId, 'commands.play.enqueued', { title: track.info.title }));
 
     } catch (err) {
       console.error(err);
-      return interaction.editReply('Ha ocurrido un error al intentar reproducir la canción.');
+      return interaction.editReply(t(interaction.guildId, 'errors.playError'));
     }
   },
 };

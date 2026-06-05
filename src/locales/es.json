@@ -1,13 +1,71 @@
 {
   "errors": {
     "sameVoiceChannel": "❌ Debes estar en el mismo canal de voz que el bot para reproducir música",
-    "mustBeInVoice": "❌ Debes estar en un canal de voz para reproducir música"
+    "mustBeInVoice": "❌ Debes estar en un canal de voz para reproducir música",
+    "noPlayer": "❌ No hay ninguna reproducción activa.",
+    "noActivePlayerAutoplay": "No hay ningún reproductor activo. Reproduce algo primero.",
+    "notSameVoiceControl": "❌ Debes estar en el mismo canal de voz que el bot para usar los controles.",
+    "noLavalinkNodes": "❌ No hay nodos de Lavalink conectados.",
+    "noResults": "No se han encontrado resultados para `{query}`.",
+    "searchError": "Ha ocurrido un error al buscar la canción.",
+    "playError": "Ha ocurrido un error al intentar reproducir la canción.",
+    "setupNoPermission": "❌ No he podido crear el canal. Revisa mis permisos.",
+    "commandError": "¡Ha ocurrido un error al ejecutar este comando!"
   },
   "commands": {
     "language": {
       "noPermission": "❌ Necesitas permisos de Administrador para cambiar el idioma.",
       "invalidLanguage": "❌ Idioma inválido. Los idiomas soportados son: `es`, `en`.",
       "success": "✅ El idioma del servidor ha sido cambiado a: **{lang}**."
+    },
+    "autoplay": {
+      "enabled": "🔁 Reproducción automática **ACTIVADA**.",
+      "disabled": "🔁 Reproducción automática **DESACTIVADA**."
+    },
+    "pause": {
+      "paused": "⏸️ Reproducción pausada.",
+      "resumed": "▶️ Reproducción reanudada."
+    },
+    "play": {
+      "webAccessTitle": "🔐 **Acceso al Panel Web**",
+      "webAccessDesc": "El bot se ha unido a tu canal. Para controlar la música desde tu navegador, entra a:\n**{domain}**\n\nTu código PIN secreto de 6 dígitos es: `{pin}`\n*(Este código expira en 5 minutos)*",
+      "webAccessDescButton": "Para controlar la música desde tu navegador, entra a:\n**{domain}**\n\nTu código PIN secreto es: `{pin}`\n*(Expira en 5 minutos)*",
+      "playlistAdded": "✅ Añadida la lista **{title}** ({count} canciones).",
+      "enqueued": "✅ En cola: **{title}**"
+    },
+    "queue": {
+      "empty": "No hay nada sonando ahora mismo.",
+      "title": "Cola de reproducción para {guildName}",
+      "nowPlaying": "🎵 Sonando ahora:",
+      "upNext": "📋 Siguientes canciones:",
+      "footer": "Página {page} de {pages} | {total} canciones en cola",
+      "moreSongs": "Y {count} canciones más..."
+    },
+    "setup": {
+      "success": "✅ Canal de música configurado con éxito: {channel}",
+      "topic": "Controla la música del bot escribiendo aquí abajo o usando los botones."
+    },
+    "setupPanel": {
+      "title": "🎵 REPRODUCTOR DE MÚSICA",
+      "noPlayingDesc": "No hay nada sonando ahora mismo.\n\nEscribe el **nombre de una canción** o una **URL** aquí abajo para empezar a reproducir.",
+      "nowPlaying": "🚀 **Sonando ahora:**",
+      "author": "👤 Autor",
+      "duration": "🕒 Duración",
+      "requestedBy": "📥 Solicitado por",
+      "upNext": "📜 Siguientes en la cola",
+      "live": "EN DIRECTO",
+      "statusPlaying": "▶️ SONANDO",
+      "statusPaused": "⏸️ PAUSADO",
+      "footer": "Estado: {status} | Volumen: {volume}% | Autoplay: {autoplay} | Tussi Music | By @p0u"
+    },
+    "skip": {
+      "skipped": "⏭️ Canción saltada."
+    },
+    "stop": {
+      "stopped": "🛑 Reproducción detenida y cola vaciada."
+    },
+    "volume": {
+      "success": "🔊 Volumen ajustado a **{volume}%**."
     }
   }
 }

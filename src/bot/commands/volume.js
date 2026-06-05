@@ -3,6 +3,7 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const { getManager } = require('../../lavalink/manager');
 const db = require('../../db/database');
+const { t } = require('../../utils/i18n');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -32,7 +33,7 @@ module.exports = {
     const isSetupChannel = guildData && guildData.setup_channel_id === interaction.channelId;
 
     return interaction.reply({ 
-      content: `🔊 Volumen establecido al **${level}%**.`, 
+      content: t(interaction.guildId, 'commands.volume.success', { volume: level }), 
       flags: isSetupChannel ? [MessageFlags.Ephemeral] : [] 
     });
   },

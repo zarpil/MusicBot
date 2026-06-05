@@ -3,6 +3,8 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const { getManager } = require('../../lavalink/manager');
 const { getWsServer } = require('../../api/ws/wsServer');
+const db = require('../../db/database');
+const { t } = require('../../utils/i18n');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -12,7 +14,12 @@ module.exports = {
     const manager = getManager();
     const player = manager.players.get(interaction.guildId);
  
-    if (!player) return interaction.reply({ content: 'No hay ninguna reproducción activa.', flags: [MessageFlags.Ephemeral] });
+    if (!player) {
+      return interaction.reply({
+        content: t(interaction.guildId, 'errors.noPlayer'),
+        flags: [MessageFlags.Ephemeral]
+      });
+    }
  
     const newPausedState = !player.paused;
     await player.pause(newPausedState);
@@ -36,7 +43,9 @@ module.exports = {
     const isSetupChannel = guildData && guildData.setup_channel_id === interaction.channelId;
 
     return interaction.reply({ 
-      content: newPausedState ? '⏸️ Pausado.' : '▶️ Reanudado.', 
+      content: newPausedState 
+        ? t(interaction.guildId, 'commands.pause.paused') 
+        : t(interaction.guildId, 'commands.pause.resumed'), 
       flags: isSetupChannel ? [MessageFlags.Ephemeral] : [] 
     });
   },

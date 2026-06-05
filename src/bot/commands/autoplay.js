@@ -3,6 +3,7 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const { getManager } = require('../../lavalink/manager');
 const db = require('../../db/database');
+const { t } = require('../../utils/i18n');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -13,7 +14,10 @@ module.exports = {
     const player = manager.players.get(interaction.guildId);
 
     if (!player) {
-      return interaction.reply({ content: 'No hay ningún reproductor activo. Reproduce algo primero.', flags: [MessageFlags.Ephemeral] });
+      return interaction.reply({
+        content: t(interaction.guildId, 'errors.noActivePlayerAutoplay'),
+        flags: [MessageFlags.Ephemeral]
+      });
     }
 
     const currentAutoplay = player.get('autoplay') || false;
@@ -26,7 +30,9 @@ module.exports = {
     const isSetupChannel = guildData && guildData.setup_channel_id === interaction.channelId;
 
     return interaction.reply({ 
-      content: newAutoplay ? '🔁 Reproducción automática **ACTIVADA**.' : '🔁 Reproducción automática **DESACTIVADA**.', 
+      content: newAutoplay 
+        ? t(interaction.guildId, 'commands.autoplay.enabled') 
+        : t(interaction.guildId, 'commands.autoplay.disabled'), 
       flags: isSetupChannel ? [MessageFlags.Ephemeral] : [] 
     });
   },

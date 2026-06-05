@@ -2,39 +2,43 @@
 
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const db = require('../../db/database');
+const { t } = require('../../utils/i18n');
 
 /**
  * Generates the professional music panel embed.
  * @param {import('lavalink-client').Player|null} player 
+ * @param {string} guildId
  */
-function getSetupEmbed(player) {
+function getSetupEmbed(player, guildId) {
     const embed = new EmbedBuilder()
-        .setTitle('🎵 REPRODUCTOR DE MÚSICA')
+        .setTitle(t(guildId, 'setupPanel.title'))
         .setColor(0xeb40a9) // Tussi Pink
         .setImage('https://i.imgur.com/JughdYl.jpeg');
 
     if (player && player.queue.current) {
         const track = player.queue.current;
-        embed.setDescription(`🚀 **Sonando ahora:**\n[${track.info.title}](${track.info.uri})`)
+        embed.setDescription(`${t(guildId, 'setupPanel.nowPlaying')}\n[${track.info.title}](${track.info.uri})`)
             .setThumbnail(track.info.artworkUrl || 'https://i.imgur.com/8n9v9X9.png')
             .addFields(
-                { name: '👤 Autor', value: `\`${track.info.author}\``, inline: true },
-                { name: '🕒 Duración', value: `\`${track.info.isStream ? 'EN DIRECTO' : formatDuration(track.info.duration)}\``, inline: true },
-                { name: '📥 Solicitado por', value: `${track.requester?.username || track.requester || 'Anónimo'}`, inline: true }
+                { name: t(guildId, 'setupPanel.author'), value: `\`${track.info.author}\``, inline: true },
+                { name: t(guildId, 'setupPanel.duration'), value: `\`${track.info.isStream ? t(guildId, 'setupPanel.live') : formatDuration(track.info.duration)}\``, inline: true },
+                { name: t(guildId, 'setupPanel.requestedBy'), value: `${track.requester?.username || track.requester || 'Anónimo'}`, inline: true }
             );
 
         if (player.queue.tracks.length > 0) {
             const nextTracks = player.queue.tracks.slice(0, 5)
                 .map((t, i) => `**${i + 1}.** ${t.info.title.substring(0, 40)}...`)
                 .join('\n');
-            embed.addFields({ name: '📜 Siguientes en la cola', value: nextTracks });
+            embed.addFields({ name: t(guildId, 'setupPanel.upNext'), value: nextTracks });
         }
 
-        const status = player.paused ? '⏸️ PAUSADO' : '▶️ SONANDO';
-        const autoplay = player.get('autoplay') ? '✅ ON' : '❌ OFF';
-        embed.setFooter({ text: `Estado: ${status} | Volumen: ${player.volume}% | Autoplay: ${autoplay} | Tussi Music | By @p0u` });
+        const status = player.paused ? t(guildId, 'setupPanel.statusPaused') : t(guildId, 'setupPanel.statusPlaying');
+        const autoplay = player.get('autoplay') ? 'ON' : 'OFF';
+        embed.setFooter({
+            text: t(guildId, 'setupPanel.footer', { status, volume: player.volume, autoplay })
+        });
     } else {
-        embed.setDescription('No hay nada sonando ahora mismo.\n\nEscribe el **nombre de una canción** o una **URL** aquí abajo para empezar a reproducir.')
+        embed.setDescription(t(guildId, 'setupPanel.noPlayingDesc'))
             .setFooter({ text: 'Tussi Music | By @p0u' });
     }
 
@@ -132,7 +136,7 @@ async function updateSetupPanel(client, guildId, player) {
         if (!message) return;
 
         await message.edit({
-            embeds: [getSetupEmbed(player)],
+            embeds: [getSetupEmbed(player, guildId)],
             components: getSetupButtons(player)
         });
     } catch (err) {
