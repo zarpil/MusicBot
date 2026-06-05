@@ -10,7 +10,22 @@
     "searchError": "An error occurred while searching for the song.",
     "playError": "An error occurred while trying to play the song.",
     "setupNoPermission": "❌ I could not create the channel. Please check my permissions.",
-    "commandError": "There was an error while executing this command!"
+    "commandError": "There was an error while executing this command!",
+    "noResultsSimple": "❌ Nothing found for `{query}`",
+    "errorMsg": "❌ Error: {message}"
+  },
+  "setupPanel": {
+    "title": "🎵 MUSIC PLAYER",
+    "noPlayingDesc": "There is nothing playing right now.\n\nType a **song name** or **URL** below to start playing.",
+    "nowPlaying": "🚀 **Now playing:**",
+    "author": "👤 Author",
+    "duration": "🕒 Duration",
+    "requestedBy": "📥 Requested by",
+    "upNext": "📜 Next in queue",
+    "live": "LIVE",
+    "statusPlaying": "▶️ PLAYING",
+    "statusPaused": "⏸️ PAUSED",
+    "footer": "Status: {status} | Volume: {volume}% | Autoplay: {autoplay} | Tussi Music | By @p0u"
   },
   "commands": {
     "language": {
@@ -44,19 +59,6 @@
     "setup": {
       "success": "✅ Music channel successfully configured: {channel}",
       "topic": "Control the bot's music by typing below or using the buttons."
-    },
-    "setupPanel": {
-      "title": "🎵 MUSIC PLAYER",
-      "noPlayingDesc": "There is nothing playing right now.\n\nType a **song name** or **URL** below to start playing.",
-      "nowPlaying": "🚀 **Now playing:**",
-      "author": "👤 Author",
-      "duration": "🕒 Duration",
-      "requestedBy": "📥 Requested by",
-      "upNext": "📜 Next in queue",
-      "live": "LIVE",
-      "statusPlaying": "▶️ PLAYING",
-      "statusPaused": "⏸️ PAUSED",
-      "footer": "Status: {status} | Volume: {volume}% | Autoplay: {autoplay} | Tussi Music | By @p0u"
     },
     "skip": {
       "skipped": "⏭️ Song skipped."

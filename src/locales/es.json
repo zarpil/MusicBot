@@ -10,7 +10,22 @@
     "searchError": "Ha ocurrido un error al buscar la canción.",
     "playError": "Ha ocurrido un error al intentar reproducir la canción.",
     "setupNoPermission": "❌ No he podido crear el canal. Revisa mis permisos.",
-    "commandError": "¡Ha ocurrido un error al ejecutar este comando!"
+    "commandError": "¡Ha ocurrido un error al ejecutar este comando!",
+    "noResultsSimple": "❌ No se encontró nada para `{query}`",
+    "errorMsg": "❌ Error: {message}"
+  },
+  "setupPanel": {
+    "title": "🎵 REPRODUCTOR DE MÚSICA",
+    "noPlayingDesc": "No hay nada sonando ahora mismo.\n\nEscribe el **nombre de una canción** o una **URL** aquí abajo para empezar a reproducir.",
+    "nowPlaying": "🚀 **Sonando ahora:**",
+    "author": "👤 Autor",
+    "duration": "🕒 Duración",
+    "requestedBy": "📥 Solicitado por",
+    "upNext": "📜 Siguientes en la cola",
+    "live": "EN DIRECTO",
+    "statusPlaying": "▶️ SONANDO",
+    "statusPaused": "⏸️ PAUSADO",
+    "footer": "Estado: {status} | Volumen: {volume}% | Autoplay: {autoplay} | Tussi Music | By @p0u"
   },
   "commands": {
     "language": {
@@ -44,19 +59,6 @@
     "setup": {
       "success": "✅ Canal de música configurado con éxito: {channel}",
       "topic": "Controla la música del bot escribiendo aquí abajo o usando los botones."
-    },
-    "setupPanel": {
-      "title": "🎵 REPRODUCTOR DE MÚSICA",
-      "noPlayingDesc": "No hay nada sonando ahora mismo.\n\nEscribe el **nombre de una canción** o una **URL** aquí abajo para empezar a reproducir.",
-      "nowPlaying": "🚀 **Sonando ahora:**",
-      "author": "👤 Autor",
-      "duration": "🕒 Duración",
-      "requestedBy": "📥 Solicitado por",
-      "upNext": "📜 Siguientes en la cola",
-      "live": "EN DIRECTO",
-      "statusPlaying": "▶️ SONANDO",
-      "statusPaused": "⏸️ PAUSADO",
-      "footer": "Estado: {status} | Volumen: {volume}% | Autoplay: {autoplay} | Tussi Music | By @p0u"
     },
     "skip": {
       "skipped": "⏭️ Canción saltada."
