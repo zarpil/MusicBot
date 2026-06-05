@@ -1,5 +1,7 @@
 'use strict';
 
+const { t } = require('../../utils/i18n');
+
 /**
  * Checks if the bot is in a voice channel. If not, attempts to join the user's channel.
  * @param {import('lavalink-client').LavalinkManager} manager
@@ -13,7 +15,7 @@ async function ensurePlayer(manager, guild, user) {
     if (botVoiceChannelId) {
         // El bot ya está en un canal de voz. Verificamos que el usuario esté en el mismo canal.
         if (!member || member.voice.channelId !== botVoiceChannelId) {
-            throw new Error('Debes estar en el mismo canal de voz que el bot para reproducir música');
+            throw new Error(t(guild.id, 'errors.sameVoiceChannel'));
         }
 
         let player = manager.players.get(guild.id);
@@ -32,7 +34,7 @@ async function ensurePlayer(manager, guild, user) {
     } else {
         // El bot no está en ningún canal de voz.
         if (!member || !member.voice.channelId) {
-            throw new Error('Debes estar en un canal de voz para reproducir música');
+            throw new Error(t(guild.id, 'errors.mustBeInVoice'));
         }
 
         let player = manager.players.get(guild.id);

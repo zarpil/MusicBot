@@ -1,0 +1,13 @@
+{
+  "errors": {
+    "sameVoiceChannel": "❌ You must be in the same voice channel as the bot to play music",
+    "mustBeInVoice": "❌ You must be in a voice channel to play music"
+  },
+  "commands": {
+    "language": {
+      "noPermission": "❌ You need Administrator permissions to change the language.",
+      "invalidLanguage": "❌ Invalid language. Supported languages are: `es`, `en`.",
+      "success": "✅ The server language has been changed to: **{lang}**."
+    }
+  }
+}

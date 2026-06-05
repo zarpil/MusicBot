@@ -1,0 +1,13 @@
+{
+  "errors": {
+    "sameVoiceChannel": "❌ Debes estar en el mismo canal de voz que el bot para reproducir música",
+    "mustBeInVoice": "❌ Debes estar en un canal de voz para reproducir música"
+  },
+  "commands": {
+    "language": {
+      "noPermission": "❌ Necesitas permisos de Administrador para cambiar el idioma.",
+      "invalidLanguage": "❌ Idioma inválido. Los idiomas soportados son: `es`, `en`.",
+      "success": "✅ El idioma del servidor ha sido cambiado a: **{lang}**."
+    }
+  }
+}

@@ -110,6 +110,14 @@ function init() {
     `);
   }
 
+  const hasLanguage = guildCols.some(c => c.name === 'language');
+  if (!hasLanguage) {
+    console.log('[DB] Migrating guilds table for language...');
+    _db.exec(`
+      ALTER TABLE guilds ADD COLUMN language TEXT NOT NULL DEFAULT 'es';
+    `);
+  }
+
   console.log('[DB] SQLite database ready at', DB_PATH);
 }
 
@@ -127,6 +135,10 @@ function upsertGuild(id, { name = null, volume = 80, autoplay = 0 } = {}) {
 
 function setSetupInfo(id, channelId, messageId) {
   return getDb().prepare('UPDATE guilds SET setup_channel_id = ?, setup_message_id = ? WHERE id = ?').run(channelId, messageId, id);
+}
+
+function setLanguage(id, language) {
+  return getDb().prepare('UPDATE guilds SET language = ? WHERE id = ?').run(language, id);
 }
 
 function getGuild(id) {
@@ -286,6 +298,7 @@ module.exports = {
   getGuild,
   setAutoplay,
   setSetupInfo,
+  setLanguage,
   getPlaylists,
   getPlaylist,
   createPlaylist,

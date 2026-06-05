@@ -40,9 +40,9 @@ function createManager(discordClient) {
   _manager = new LavalinkManager({
     nodes: [
       {
-        id:            'main',
-        host:          process.env.LAVALINK_HOST     || 'localhost',
-        port:          parseInt(process.env.LAVALINK_PORT || '2333', 10),
+        id: 'main',
+        host: process.env.LAVALINK_HOST || 'localhost',
+        port: parseInt(process.env.LAVALINK_PORT || '2333', 10),
         authorization: process.env.LAVALINK_PASSWORD || 'youshallnotpass',
         // Secure only if you put Lavalink behind HTTPS
         secure: false,
@@ -56,7 +56,7 @@ function createManager(discordClient) {
     // Auto-move to next track when current ends
     autoSkip: true,
     client: {
-      id:       process.env.DISCORD_CLIENT_ID,
+      id: process.env.DISCORD_CLIENT_ID,
       username: 'MusicBot',
     },
     playerOptions: {
@@ -91,7 +91,7 @@ function createManager(discordClient) {
   _manager.on('trackStart', (player, track) => {
     console.log(`[Lavalink] trackStart: ${track?.info?.title} in ${player.guildId}`);
     clearIdleTimeout(player);
-    
+
     // Auto-sync across all platforms
     syncState(discordClient, player);
 
@@ -118,59 +118,59 @@ function createManager(discordClient) {
     clearIdleTimeout(player);
     syncState(discordClient, player);
   });
-  
+
   // Shared Autoplay Logic
   async function handleAutoplay(player, lastTrack) {
     if (!lastTrack) return;
     const isAutoplay = player.get('autoplay');
     const queueLen = player.queue.tracks.length;
-    
+
     if (isAutoplay && queueLen === 0) {
       try {
         console.log(`[Lavalink] Autoplay: buscando sugerencia diferente a "${lastTrack.info.title}"`);
-        
+
         // Track recently played titles to avoid loops (stored in player object)
         let playedTitles = player.get('playedTitles') || [];
         if (!playedTitles.includes(lastTrack.info.title)) {
-            playedTitles.push(lastTrack.info.title);
-            if (playedTitles.length > 20) playedTitles.shift(); // Keep last 20
-            player.set('playedTitles', playedTitles);
+          playedTitles.push(lastTrack.info.title);
+          if (playedTitles.length > 20) playedTitles.shift(); // Keep last 20
+          player.set('playedTitles', playedTitles);
         }
 
         const queries = [
-            `ytmsearch:${lastTrack.info.author} related`, // Artist radio (best for variety)
-            `ytsearch:${lastTrack.info.author} top music`,
-            `ytsearch:similar tracks to ${lastTrack.info.title} ${lastTrack.info.author}`
+          `ytmsearch:${lastTrack.info.author} related`, // Artist radio (best for variety)
+          `ytsearch:${lastTrack.info.author} top music`,
+          `ytsearch:similar tracks to ${lastTrack.info.title} ${lastTrack.info.author}`
         ];
 
         let nextTrack = null;
         for (const q of queries) {
-            const res = await player.search(q, 'Autoplay');
-            if (res && res.tracks && res.tracks.length > 0) {
-                // FILTER: Ignore tracks with same URI, EXTREMELY similar titles, or already played
-                const candidates = res.tracks.filter(t => {
-                    const isSameUri = t.info.uri === lastTrack.info.uri;
-                    const isAlreadyPlayed = playedTitles.some(title => t.info.title.toLowerCase().includes(title.toLowerCase()));
-                    const isSameSongVersion = t.info.title.toLowerCase().includes(lastTrack.info.title.toLowerCase()) || 
-                                           lastTrack.info.title.toLowerCase().includes(t.info.title.toLowerCase());
-                    return !isSameUri && !isAlreadyPlayed && !isSameSongVersion;
-                });
+          const res = await player.search(q, 'Autoplay');
+          if (res && res.tracks && res.tracks.length > 0) {
+            // FILTER: Ignore tracks with same URI, EXTREMELY similar titles, or already played
+            const candidates = res.tracks.filter(t => {
+              const isSameUri = t.info.uri === lastTrack.info.uri;
+              const isAlreadyPlayed = playedTitles.some(title => t.info.title.toLowerCase().includes(title.toLowerCase()));
+              const isSameSongVersion = t.info.title.toLowerCase().includes(lastTrack.info.title.toLowerCase()) ||
+                lastTrack.info.title.toLowerCase().includes(t.info.title.toLowerCase());
+              return !isSameUri && !isAlreadyPlayed && !isSameSongVersion;
+            });
 
-                if (candidates.length > 0) {
-                    // Random pick from top 5 candidates for more diversity
-                    nextTrack = candidates[Math.floor(Math.random() * Math.min(5, candidates.length))];
-                    break;
-                }
+            if (candidates.length > 0) {
+              // Random pick from top 5 candidates for more diversity
+              nextTrack = candidates[Math.floor(Math.random() * Math.min(5, candidates.length))];
+              break;
             }
+          }
         }
 
         // Fallback: if all filters fail, pick a random track from first search to at least have music
         if (!nextTrack) {
-            console.log('[Lavalink] Autoplay: No se encontraron candidatos únicos, usando fallback...');
-            const fallbackRes = await player.search(`ytsearch:${lastTrack.info.author} mix`, 'Autoplay');
-            if (fallbackRes.tracks.length > 0) {
-                nextTrack = fallbackRes.tracks.find(t => t.info.uri !== lastTrack.info.uri) || fallbackRes.tracks[0];
-            }
+          console.log('[Lavalink] Autoplay: No se encontraron candidatos únicos, usando fallback...');
+          const fallbackRes = await player.search(`ytsearch:${lastTrack.info.author} mix`, 'Autoplay');
+          if (fallbackRes.tracks.length > 0) {
+            nextTrack = fallbackRes.tracks.find(t => t.info.uri !== lastTrack.info.uri) || fallbackRes.tracks[0];
+          }
         }
 
         if (nextTrack) {
@@ -183,9 +183,9 @@ function createManager(discordClient) {
 
           console.log(`[Lavalink] Autoplay: Añadiendo "${nextTrack.info.title}"`);
           await player.queue.add(nextTrack);
-          
+
           if (!player.playing) await player.play();
-          
+
           // syncState will be called by trackStart event if it actually starts playing
           // but we also call it here to sync the new queue instantly
           syncState(discordClient, player);
@@ -199,15 +199,15 @@ function createManager(discordClient) {
   _manager.on('trackEnd', async (player, track, payload) => {
     const reason = payload?.reason || 'unknown';
     console.log(`[Lavalink] trackEnd DEBUG: title="${track?.info?.title}", reason="${reason}"`);
-    
+
     if (reason === 'replaced' && payload?.byPlayer) return;
-    
+
     // 2-second cooldown to prevent double-triggers from multiple events (trackEnd + queueEnd)
     const now = Date.now();
     const lastTrigger = player.get('lastAutoplayTrigger') || 0;
-    if (now - lastTrigger < 2000) return; 
+    if (now - lastTrigger < 2000) return;
     player.set('lastAutoplayTrigger', now);
-    
+
     await handleAutoplay(player, track);
 
     if (!player.playing && player.queue.tracks.length === 0 && !player.queue.current) {
@@ -219,10 +219,10 @@ function createManager(discordClient) {
 
   _manager.on('queueEnd', async (player, track, payload) => {
     console.log(`[Lavalink] queueEnd DEBUG in ${player.guildId}`);
-    
+
     const now = Date.now();
     const lastTrigger = player.get('lastAutoplayTrigger') || 0;
-    if (now - lastTrigger < 2000) return; 
+    if (now - lastTrigger < 2000) return;
     player.set('lastAutoplayTrigger', now);
 
     await handleAutoplay(player, track);
@@ -239,15 +239,15 @@ function createManager(discordClient) {
     updateSetupPanel(discordClient, player.guildId, null);
     // WS broadcast for destroy
     try {
-        const ws = require('../api/ws/wsServer');
-        ws.broadcast(player.guildId, { type: 'STATE_SYNC', state: null });
-    } catch {}
+      const ws = require('../api/ws/wsServer');
+      ws.broadcast(player.guildId, { type: 'STATE_SYNC', state: null });
+    } catch { }
   });
-  
+
   _manager.on('trackStuck', (player, track, payload) => {
     console.log(`[Lavalink] trackStuck: ${track?.info?.title} in ${player.guildId}`);
   });
-  
+
   _manager.on('trackError', (player, track, payload) => {
     console.log(`[Lavalink] trackError: ${track?.info?.title} in ${player.guildId}`, payload);
   });
