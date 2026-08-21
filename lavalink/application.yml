@@ -41,12 +41,16 @@ plugins:
     language: "en"
     clients:
       - TVHTML5_SIMPLY
-      - MUSIC
+      - TVHTML5_KIDS
       - ANDROID_VR
+      - MUSIC
+      - MWEB
       - WEB
       - WEBEMBEDDED
     oauth:
-      enabled: false
+      enabled: true
+      refreshToken: "${YOUTUBE_REFRESH_TOKEN:}"
+      skipInitialization: true
   lavasrc:
     providers:
       - "ytsearch:\"%ISRC%\""
