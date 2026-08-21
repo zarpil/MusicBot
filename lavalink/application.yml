@@ -4,7 +4,7 @@ server:
 
 lavalink:
   plugins:
-    - dependency: "dev.lavalink.youtube:youtube-plugin:1.18.2"
+    - dependency: "dev.lavalink.youtube:youtube-plugin:1.18.0"
       repository: "https://maven.lavalink.dev/releases"
     - dependency: "com.github.topi314.lavasrc:lavasrc-plugin:4.4.1"
       repository: "https://maven.lavalink.dev/releases"
@@ -40,14 +40,21 @@ plugins:
     region: "US"
     language: "en"
     clients:
-      - TVHTML5
-      - WEB
-      - MUSIC
+      - ANDROID
       - ANDROID_VR
+      - ANDROID_MUSIC
+      - ANDROID_TESTSUITE
+      - IOS
+      - IOS_MUSIC
+      - TVHTML5EMBEDDED
+      - TVHTML5
+      - MUSIC
+      - WEB
+      - WEBEMBEDDED
     oauth:
-      enabled: true
+      enabled: false
       refreshToken: "${YOUTUBE_REFRESH_TOKEN:}"
-      skipInitialization: true
+      forceRedirect: true
   lavasrc:
     providers:
       - "ytsearch:\"%ISRC%\""
