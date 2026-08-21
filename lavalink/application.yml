@@ -40,11 +40,9 @@ plugins:
     region: "US"
     language: "en"
     clients:
-      - TVHTML5_SIMPLY
-      - TVHTML5_KIDS
+      - TV
       - ANDROID_VR
       - MUSIC
-      - MWEB
       - WEB
       - WEBEMBEDDED
     oauth:
