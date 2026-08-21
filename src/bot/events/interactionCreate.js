@@ -15,6 +15,7 @@ module.exports = {
         const manager = getManager();
         let player = manager.players.get(interaction.guildId);
 
+        const { MessageFlags } = require('discord.js');
         // Special case for WEB button: don't require an active player to get the PIN
         if (interaction.customId === 'PLAYER_WEB') {
             const pin = authStore.createPinForUser(interaction.user);
@@ -23,18 +24,18 @@ module.exports = {
             return interaction.reply({
                 content: t(interaction.guildId, 'commands.play.webAccessTitle') + '\n\n' +
                         t(interaction.guildId, 'commands.play.webAccessDescButton', { domain, pin }),
-                ephemeral: true
-            });
+                flags: [MessageFlags.Ephemeral]
+            }).catch(err => console.warn('[Interaction] WEB button reply error:', err.message));
         }
 
-        if (!player) return interaction.reply({ content: t(interaction.guildId, 'errors.noPlayer'), ephemeral: true });
+        if (!player) return interaction.reply({ content: t(interaction.guildId, 'errors.noPlayer'), flags: [MessageFlags.Ephemeral] }).catch(() => {});
 
         const member = interaction.member;
         if (!member.voice.channelId || member.voice.channelId !== player.voiceChannelId) {
-            return interaction.reply({ content: t(interaction.guildId, 'errors.notSameVoiceControl'), ephemeral: true });
+            return interaction.reply({ content: t(interaction.guildId, 'errors.notSameVoiceControl'), flags: [MessageFlags.Ephemeral] }).catch(() => {});
         }
 
-        await interaction.deferUpdate();
+        await interaction.deferUpdate().catch(() => {});
 
         try {
             switch (interaction.customId) {

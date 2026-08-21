@@ -19,6 +19,8 @@ data/musicbot.db-wal
 lavalink/data/
 lavalink/plugins/
 lavalink/logs/
+*.jar
+
 
 # ─── OS Files ────────────────────────────────────────────────────────────
 .DS_Store

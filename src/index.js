@@ -43,3 +43,11 @@ main().catch(err => {
   console.error('[Main] Fatal error:', err);
   process.exit(1);
 });
+
+process.on('unhandledRejection', (reason) => {
+  console.warn('[Process] Unhandled Rejection:', reason?.message || reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('[Process] Uncaught Exception:', err);
+});
