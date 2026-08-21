@@ -12,6 +12,7 @@ services:
       - SERVER_PORT=2333
       - LAVALINK_SERVER_PASSWORD=${LAVALINK_PASSWORD:-youshallnotpass}
     volumes:
+      - ./lavalink/application.yml:/opt/Lavalink/application.yml
       - ./lavalink/data:/opt/Lavalink/data
       - lavalink_data:/opt/Lavalink/logs
     ports:
