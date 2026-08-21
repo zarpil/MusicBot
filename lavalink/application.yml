@@ -46,9 +46,7 @@ plugins:
       - WEB
       - WEBEMBEDDED
     oauth:
-      enabled: true
-      refreshToken: "${YOUTUBE_REFRESH_TOKEN:}"
-      skipInitialization: true
+      enabled: false
   lavasrc:
     providers:
       - "ytsearch:\"%ISRC%\""
