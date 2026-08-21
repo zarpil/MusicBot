@@ -28,7 +28,7 @@ module.exports = {
             const player = await ensurePlayer(manager, message.guild, message.author);
             
             let queryClean = query;
-            if (!queryClean.startsWith('http')) queryClean = `ytsearch:${queryClean}`;
+            if (!queryClean.startsWith('http')) queryClean = `ytmsearch:${queryClean}`;
 
             const res = await player.search(queryClean, message.author);
             

@@ -36,7 +36,7 @@ module.exports = {
 
     const manager = getManager();
     let queryClean = query;
-    if (queryClean && !queryClean.startsWith('http')) queryClean = `ytsearch:${queryClean}`;
+    if (queryClean && !queryClean.startsWith('http')) queryClean = `ytmsearch:${queryClean}`;
 
     // Create or get player
     const player = manager.createPlayer({

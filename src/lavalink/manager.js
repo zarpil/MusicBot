@@ -62,7 +62,7 @@ function createManager(discordClient) {
     playerOptions: {
       clientBasedPositionUpdateInterval: 100,
       applyVolumeAsFilter: true, // often better for consistent volume
-      defaultSearchPlatform: 'ytsearch',
+      defaultSearchPlatform: 'ytmsearch',
       volumeDecrementer: 0.75, // avoids clipping
     },
   });

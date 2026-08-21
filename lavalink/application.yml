@@ -40,20 +40,35 @@ plugins:
     region: "US"
     language: "en"
     clients:
-      - TV
-      - ANDROID_VR
       - MUSIC
       - WEB
+      - ANDROID_VR
       - WEBEMBEDDED
+    clientOptions:
+      MUSIC:
+        playback: true
+        playlistLoading: true
+        searching: true
+        videoLoading: true
+      WEB:
+        playback: true
+        playlistLoading: true
+        searching: true
+        videoLoading: true
+      ANDROID_VR:
+        playback: true
+        playlistLoading: true
+        searching: true
+        videoLoading: true
     oauth:
       enabled: true
       refreshToken: "${YOUTUBE_REFRESH_TOKEN:}"
       skipInitialization: true
   lavasrc:
     providers:
+      - "ytmsearch:%QUERY%"
       - "ytsearch:\"%ISRC%\""
       - "ytsearch:%QUERY%"
-      - "ytmsearch:%QUERY%"
     sources:
       spotify: true
       appleMusic: false
