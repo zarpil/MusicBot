@@ -156,14 +156,16 @@ function initWsServer(httpServer, getManager, discordClient) {
 
                 if (!player) throw new Error('No se pudo crear el reproductor');
 
-                // If track has an encoded string or title/author, build the best search term
-                let query = msg.track.uri || msg.track._searchQuery || `${msg.track.author || ''} ${msg.track.title || ''}`.trim();
-                
-                // If it's a YouTube URL, search by title + artist to ensure we fetch a working, unblocked stream
-                if (query.includes('youtube.com') || query.includes('youtu.be') || query.startsWith('ytsearch')) {
-                  query = `scsearch:${msg.track.author || ''} ${msg.track.title || ''}`.trim();
-                }
+                // Clean query string from special chars, emojis and brackets for search resilience
+                let rawQuery = (msg.track?.title ? `${msg.track.author || ''} ${msg.track.title}` : (msg.track?.uri || '')).trim();
+                let cleanSearch = rawQuery
+                  .replace(/[\u{1F600}-\u{1F6FF}|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '') // strip emojis
+                  .replace(/\(.*?\)|\[.*?\]/g, '') // strip (Audio Oficial), etc.
+                  .replace(/[❌😲!]/g, '')
+                  .trim();
 
+                let query = msg.track?.uri && msg.track.uri.startsWith('http') ? msg.track.uri : `ytmsearch:${cleanSearch || rawQuery}`;
+                
                 console.log(`[WS] Resolviendo pista para encolar: ${query}`);
                 const requester = {
                   username: user.username,
@@ -179,6 +181,20 @@ function initWsServer(httpServer, getManager, discordClient) {
                 }
                 
                 let trackToLoad = (res && res.tracks && res.tracks.length > 0) ? res.tracks[0] : null;
+
+                // Fallback to scsearch or raw title if first search had no tracks
+                if (!trackToLoad) {
+                  const fallbackQuery = `scsearch:${cleanSearch || rawQuery}`;
+                  console.log(`[WS] Trying fallback query: ${fallbackQuery}`);
+                  try {
+                    const fallbackRes = await player.search(fallbackQuery, requester);
+                    if (fallbackRes && fallbackRes.tracks && fallbackRes.tracks.length > 0) {
+                      trackToLoad = fallbackRes.tracks[0];
+                    }
+                  } catch (fallbackErr) {
+                    console.error('[WS] Fallback search failed:', fallbackErr.message);
+                  }
+                }
 
                 // Special fallback for Spotify: if it's a Spotify link and direct resolve fails, 
                 // search for metadata on YouTube
