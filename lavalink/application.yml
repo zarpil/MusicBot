@@ -40,14 +40,14 @@ plugins:
     region: "US"
     language: "en"
     clients:
-      - TVHTML5_SIMPLY
-      - TVHTML5
-      - ANDROID_TESTSUITE
       - MUSIC
-      - ANDROID_VR
-      - WEB
+      - ANDROID_MUSIC
+      - WEBEMBEDDED
+      - TVHTML5_SIMPLY
     oauth:
-      enabled: false
+      enabled: true
+      refreshToken: "${YOUTUBE_REFRESH_TOKEN:}"
+      skipInitialization: true
   lavasrc:
     providers:
       - "scsearch:%QUERY%"

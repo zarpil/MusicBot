@@ -156,43 +156,60 @@ function initWsServer(httpServer, getManager, discordClient) {
 
                 if (!player) throw new Error('No se pudo crear el reproductor');
 
-                // Clean query string from special chars, emojis and brackets for search resilience
-                let rawQuery = (msg.track?.title ? `${msg.track.author || ''} ${msg.track.title}` : (msg.track?.uri || '')).trim();
-                let cleanSearch = rawQuery
-                  .replace(/[\u{1F600}-\u{1F6FF}|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '') // strip emojis
-                  .replace(/\(.*?\)|\[.*?\]/g, '') // strip (Audio Oficial), etc.
-                  .replace(/[❌😲!]/g, '')
-                  .trim();
+                let trackToLoad = null;
 
-                let query = msg.track?.uri && msg.track.uri.startsWith('http') ? msg.track.uri : `ytmsearch:${cleanSearch || rawQuery}`;
-                
-                console.log(`[WS] Resolviendo pista para encolar: ${query}`);
-                const requester = {
-                  username: user.username,
-                  id: user.id,
-                  avatar: user.avatar
-                };
-
-                let res = null;
-                try {
-                  res = await player.search(query, requester);
-                } catch (err) {
-                  console.warn(`[WS] First resolve attempt failed for "${query}": ${err.message}`);
+                // Priority 1: If msg.track already contains a decoded/encoded track from Lavalink search API
+                if (msg.track?.encoded) {
+                  console.log(`[WS] Usando pista pre-resuelta desde búsqueda: ${msg.track.title}`);
+                  trackToLoad = {
+                    encoded: msg.track.encoded,
+                    info: {
+                      title: msg.track.title,
+                      author: msg.track.author,
+                      duration: msg.track.duration || 0,
+                      uri: msg.track.uri,
+                      artworkUrl: msg.track.artworkUrl,
+                      sourceName: msg.track.sourceName || 'youtube',
+                      isSeekable: true,
+                      isStream: false,
+                      position: 0,
+                    },
+                    userData: { requester },
+                  };
                 }
-                
-                let trackToLoad = (res && res.tracks && res.tracks.length > 0) ? res.tracks[0] : null;
 
-                // Fallback to scsearch or raw title if first search had no tracks
+                // Priority 2: If no encoded track or not direct, resolve via query
                 if (!trackToLoad) {
-                  const fallbackQuery = `scsearch:${cleanSearch || rawQuery}`;
-                  console.log(`[WS] Trying fallback query: ${fallbackQuery}`);
+                  let rawQuery = (msg.track?.title ? `${msg.track.author || ''} ${msg.track.title}` : (msg.track?.uri || '')).trim();
+                  let cleanSearch = rawQuery
+                    .replace(/[\u{1F600}-\u{1F6FF}|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '')
+                    .replace(/\(.*?\)|\[.*?\]/g, '')
+                    .replace(/[❌😲!]/g, '')
+                    .trim();
+
+                  let query = msg.track?.uri && msg.track.uri.startsWith('http') ? msg.track.uri : `ytmsearch:${cleanSearch || rawQuery}`;
+                  console.log(`[WS] Resolviendo pista para encolar: ${query}`);
+
+                  let res = null;
                   try {
-                    const fallbackRes = await player.search(fallbackQuery, requester);
-                    if (fallbackRes && fallbackRes.tracks && fallbackRes.tracks.length > 0) {
-                      trackToLoad = fallbackRes.tracks[0];
+                    res = await player.search(query, requester);
+                  } catch (err) {
+                    console.warn(`[WS] First resolve attempt failed for "${query}": ${err.message}`);
+                  }
+                  
+                  trackToLoad = (res && res.tracks && res.tracks.length > 0) ? res.tracks[0] : null;
+
+                  if (!trackToLoad) {
+                    const fallbackQuery = `scsearch:${cleanSearch || rawQuery}`;
+                    console.log(`[WS] Trying fallback query: ${fallbackQuery}`);
+                    try {
+                      const fallbackRes = await player.search(fallbackQuery, requester);
+                      if (fallbackRes && fallbackRes.tracks && fallbackRes.tracks.length > 0) {
+                        trackToLoad = fallbackRes.tracks[0];
+                      }
+                    } catch (fallbackErr) {
+                      console.error('[WS] Fallback search failed:', fallbackErr.message);
                     }
-                  } catch (fallbackErr) {
-                    console.error('[WS] Fallback search failed:', fallbackErr.message);
                   }
                 }
 
