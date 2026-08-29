@@ -50,6 +50,7 @@ plugins:
       skipInitialization: true
   lavasrc:
     providers:
+      - "scsearch:%QUERY%"
       - "ytsearch:\"%ISRC%\""
       - "ytsearch:%QUERY%"
       - "ytmsearch:%QUERY%"

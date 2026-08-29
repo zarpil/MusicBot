@@ -36,7 +36,10 @@ module.exports = {
 
     const manager = getManager();
     let queryClean = query;
-    if (queryClean && !queryClean.startsWith('http')) queryClean = `ytsearch:${queryClean}`;
+    if (queryClean && !queryClean.startsWith('http')) {
+      // Default to spsearch with automatic scsearch fallback
+      queryClean = `spsearch:${queryClean}`;
+    }
 
     // Create or get player
     const player = manager.createPlayer({
@@ -73,7 +76,14 @@ module.exports = {
       if (nodes.size === 0) return interaction.editReply(t(interaction.guildId, 'errors.noLavalinkNodes'));
       const node = [...nodes.values()][0];
       
-      const res = await node.search(queryClean, interaction.user);
+      let res = await node.search(queryClean, interaction.user);
+
+      // If initial search had no results or error and it wasn't a direct URL, fallback to SoundCloud
+      if ((res.loadType === 'empty' || res.loadType === 'error') && !query.startsWith('http')) {
+        console.log(`[Bot] Fallback buscando en SoundCloud: scsearch:${query}`);
+        res = await node.search(`scsearch:${query}`, interaction.user);
+      }
+
       console.log(`[Bot] Resultado: ${res.loadType} (${res.tracks?.length || 0} pistas)`);
 
       if (res.loadType === 'empty') {
