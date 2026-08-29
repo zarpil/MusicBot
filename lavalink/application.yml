@@ -40,10 +40,10 @@ plugins:
     region: "US"
     language: "en"
     clients:
-      - TVHTML5EMBEDDED
+      - ANDROID_MUSIC
       - MUSIC
+      - TV
       - WEB
-      - ANDROID_VR
     oauth:
       enabled: true
       refreshToken: "${YOUTUBE_REFRESH_TOKEN:}"

@@ -62,7 +62,7 @@ function createManager(discordClient) {
     playerOptions: {
       clientBasedPositionUpdateInterval: 100,
       applyVolumeAsFilter: true, // often better for consistent volume
-      defaultSearchPlatform: 'scsearch',
+      defaultSearchPlatform: 'ytmsearch',
       volumeDecrementer: 0.75, // avoids clipping
     },
   });
@@ -248,8 +248,36 @@ function createManager(discordClient) {
     console.log(`[Lavalink] trackStuck: ${track?.info?.title} in ${player.guildId}`);
   });
 
-  _manager.on('trackError', (player, track, payload) => {
-    console.log(`[Lavalink] trackError: ${track?.info?.title} in ${player.guildId}`, payload);
+  _manager.on('trackError', async (player, track, payload) => {
+    console.warn(`[Lavalink] trackError: ${track?.info?.title} in ${player.guildId} (Source: ${track?.info?.sourceName}). Attempting alternative stream...`);
+    
+    // Prevent infinite retry loop on the same track
+    const retriedTracks = player.get('retriedTracks') || new Set();
+    if (track?.info?.title && !retriedTracks.has(track.info.title)) {
+      retriedTracks.add(track.info.title);
+      player.set('retriedTracks', retriedTracks);
+
+      try {
+        const queryTerm = `${track.info.author || ''} ${track.info.title}`.trim();
+        const fallbackPrefix = track.info.sourceName === 'soundcloud' ? 'ytmsearch' : 'scsearch';
+        console.log(`[Lavalink] Auto-fallback for failed track: ${fallbackPrefix}:${queryTerm}`);
+
+        const fallbackRes = await player.search(`${fallbackPrefix}:${queryTerm}`, track.userData?.requester || 'AutoFallback');
+        if (fallbackRes && fallbackRes.tracks && fallbackRes.tracks.length > 0) {
+          const alternateTrack = fallbackRes.tracks[0];
+          console.log(`[Lavalink] Auto-fallback found: "${alternateTrack.info.title}" (${alternateTrack.info.sourceName})`);
+          await player.play({ track: alternateTrack });
+          return;
+        }
+      } catch (recoveryErr) {
+        console.error('[Lavalink] Auto-fallback failed:', recoveryErr.message);
+      }
+    }
+
+    // If recovery wasn't possible, proceed to next track in queue or autoplay
+    if (player.queue.tracks.length > 0) {
+      await player.skip();
+    }
   });
 
   return _manager;

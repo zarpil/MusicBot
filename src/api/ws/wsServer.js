@@ -156,7 +156,14 @@ function initWsServer(httpServer, getManager, discordClient) {
 
                 if (!player) throw new Error('No se pudo crear el reproductor');
 
-                const query = msg.track.uri || msg.track._searchQuery || `${msg.track.author} - ${msg.track.title}`;
+                // If track has an encoded string or title/author, build the best search term
+                let query = msg.track.uri || msg.track._searchQuery || `${msg.track.author || ''} ${msg.track.title || ''}`.trim();
+                
+                // If it's a YouTube URL, search by title + artist to ensure we fetch a working, unblocked stream
+                if (query.includes('youtube.com') || query.includes('youtu.be') || query.startsWith('ytsearch')) {
+                  query = `scsearch:${msg.track.author || ''} ${msg.track.title || ''}`.trim();
+                }
+
                 console.log(`[WS] Resolviendo pista para encolar: ${query}`);
                 const requester = {
                   username: user.username,
@@ -188,15 +195,12 @@ function initWsServer(httpServer, getManager, discordClient) {
                   }
                 }
 
-                // Fallback for YouTube: if direct resolve fails OR errors out, try ytmsearch
+                // Fallback for YouTube: if direct resolve fails OR errors out, try scsearch fallback
                 if (!trackToLoad && (query.includes('youtube.com') || query.includes('youtu.be') || query.startsWith('ytsearch'))) {
-                   const q = query.replace('ytsearch:', '');
-                   const videoId = q.match(/(?:v=|ext\/|embed\/|youtu.be\/)([^&?#/]+)/)?.[1];
-                   const searchTerms = videoId || q;
-
-                   console.warn(`[WS] Direct YT resolve failed/errored. Trying ytmsearch fallback for: ${searchTerms}`);
+                   const searchTerms = msg.track?.title ? `${msg.track.author || ''} ${msg.track.title}` : query;
+                   console.warn(`[WS] YouTube resolve failed/blocked. Trying scsearch fallback for: ${searchTerms}`);
                     try {
-                      const fallbackRes = await player.search(`ytmsearch:${searchTerms}`, requester);
+                      const fallbackRes = await player.search(`scsearch:${searchTerms}`, requester);
                       if (fallbackRes && fallbackRes.tracks && fallbackRes.tracks.length > 0) {
                          trackToLoad = fallbackRes.tracks[0];
                       }

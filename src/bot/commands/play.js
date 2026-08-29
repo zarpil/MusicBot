@@ -37,8 +37,8 @@ module.exports = {
     const manager = getManager();
     let queryClean = query;
     if (queryClean && !queryClean.startsWith('http')) {
-      // Default to SoundCloud for ultra-fast, unblocked streaming
-      queryClean = `scsearch:${queryClean}`;
+      // Default to YouTube Music with authenticated OAuth client
+      queryClean = `ytmsearch:${queryClean}`;
     }
 
     // Create or get player
