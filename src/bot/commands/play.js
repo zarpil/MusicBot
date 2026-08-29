@@ -37,8 +37,8 @@ module.exports = {
     const manager = getManager();
     let queryClean = query;
     if (queryClean && !queryClean.startsWith('http')) {
-      // Default to spsearch with automatic scsearch fallback
-      queryClean = `spsearch:${queryClean}`;
+      // Default to SoundCloud for ultra-fast, unblocked streaming
+      queryClean = `scsearch:${queryClean}`;
     }
 
     // Create or get player
@@ -78,10 +78,10 @@ module.exports = {
       
       let res = await node.search(queryClean, interaction.user);
 
-      // If initial search had no results or error and it wasn't a direct URL, fallback to SoundCloud
+      // If initial search had no results and it wasn't a direct URL, fallback to Spotify/YouTube
       if ((res.loadType === 'empty' || res.loadType === 'error') && !query.startsWith('http')) {
-        console.log(`[Bot] Fallback buscando en SoundCloud: scsearch:${query}`);
-        res = await node.search(`scsearch:${query}`, interaction.user);
+        console.log(`[Bot] Fallback buscando en Spotify: spsearch:${query}`);
+        res = await node.search(`spsearch:${query}`, interaction.user);
       }
 
       console.log(`[Bot] Resultado: ${res.loadType} (${res.tracks?.length || 0} pistas)`);
